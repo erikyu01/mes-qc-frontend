@@ -27,7 +27,7 @@
           </el-menu-item>
 
           <!-- 仅管理员可见的菜单 -->
-          <template v-if="user.role.id !== 2">
+          <template v-if="[1, 4].includes(user.role.id)">
             <el-sub-menu index="2">
               <template #title>
                 <el-icon><User /></el-icon>
@@ -99,6 +99,10 @@
             <el-menu-item index="/task-center-dashboard">
               <el-icon><DataAnalysis /></el-icon>
               <span>{{ translate('navigationMenu.taskDashboard') }}</span>
+            </el-menu-item>
+            <el-menu-item index="/pending-tasks">
+              <el-icon><Document /></el-icon>
+              <span>{{ translate('navigationMenu.pendingTasks') }}</span>
             </el-menu-item>
             <el-menu-item index="/current-tasks">
               <el-icon><Document /></el-icon>
@@ -173,8 +177,7 @@
           <el-input v-model="editUser.name" />
         </el-form-item>
 
-        <!-- ✅ Hide Role Selection if the user is not 管理员 -->
-        <el-form-item v-if="user.role.id !== 2" :label="translate('userManagement.editDialog.role')" prop="role">
+        <el-form-item v-if = "[1, 4].includes(user.role.id)" :label="translate('userManagement.editDialog.role')" prop="role">
           <el-select v-model="editUser.role.id">
             <el-option :label="translate('userManagement.role.admin')" :value="translate('userManagement.role.admin')" />
             <el-option :label="translate('userManagement.role.qcWorker')" :value="translate('userManagement.role.qcWorker')" />

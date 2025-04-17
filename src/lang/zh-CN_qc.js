@@ -50,6 +50,7 @@ export default {
         loginSuccess: '登录成功！',
         usernameMessage: '请输入用户名',
         passwordMessage: '请输入密码',
+        captchaMessage: "请输入验证码",
         copyright: '© 2024-2025 FPS. Quality Control for MES. All rights reserved.'
     },
     userManagement: {
@@ -182,6 +183,7 @@ export default {
         dataSummary: "数据汇总",
         taskCenter: "任务中心",
         taskDashboard: "任务看板",
+        pendingTasks: "待办任务",
         todayTasks: "今日任务",
         futureTasks: "未来任务",
         historyTasks: "历史任务",

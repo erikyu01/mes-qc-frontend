@@ -58,6 +58,38 @@ export const extractWidgetDataWithCounts = (formTemplateId, startDateTime, endDa
 };
 
 /**
+ * Fetch QC records within a date range for a specific user.
+ * Converts input datetime to UTC before querying.
+ * @param {Long} formTemplateId - The Form Template ID.
+ * @param {String} startDateTime - Local datetime in "YYYY-MM-DD HH:mm:ss" format.
+ * @param {String} endDateTime - Local datetime in "YYYY-MM-DD HH:mm:ss" format.
+ * @param {Number} createdBy - User ID who created the records.
+ * @param {Number} [page=0] - Page number for pagination.
+ * @param {Number} [size=1000] - Number of records per page.
+ * @returns {Promise} API response filtered by createdBy.
+ */
+export const fetchQcRecordsByCreatedBy = (formTemplateId, startDateTime, endDateTime, createdBy, page = 0, size = 1000) => {
+    const convertToUTC = (localDateTime) => {
+        const [datePart, timePart] = localDateTime.split(" ");
+        const [year, month, day] = datePart.split("-").map(Number);
+        const [hour, minute, second] = timePart.split(":").map(Number);
+        const localDate = new Date(year, month - 1, day, hour, minute, second);
+        const utcDate = new Date(localDate.getTime() + localDate.getTimezoneOffset() * 60000);
+        const pad = (num) => String(num).padStart(2, "0");
+        return `${utcDate.getFullYear()}-${pad(utcDate.getMonth() + 1)}-${pad(utcDate.getDate())} ` +
+            `${pad(utcDate.getHours())}:${pad(utcDate.getMinutes())}:${pad(utcDate.getSeconds())}`;
+    };
+
+    const startDateTimeUTC = convertToUTC(startDateTime);
+    const endDateTimeUTC = convertToUTC(endDateTime);
+
+    return api.get(`${BASE_URL}/qc-records/by-user`, {
+        params: { formTemplateId, startDateTime: startDateTimeUTC, endDateTime: endDateTimeUTC, createdBy, page, size },
+        headers: { 'Content-Type': 'application/json' }
+    });
+};
+
+/**
  * Fetch QC records within a given date range, with optional pagination.
  * @param {Long} formTemplateId - The Form Template ID.
  * @param {String} startDateTime - The start date-time in "YYYY-MM-DD HH:mm:ss" format.
@@ -96,6 +128,7 @@ export const fetchQcRecords = (formTemplateId, startDateTime, endDateTime, page 
         headers: { 'Content-Type': 'application/json' }
     });
 };
+
 
 /**
  * Generate and download QC report as a PDF.

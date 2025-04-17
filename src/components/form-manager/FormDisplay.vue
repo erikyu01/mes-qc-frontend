@@ -6,6 +6,7 @@
         <el-switch
             v-model="enable_form"
             v-if="switchDisplayed"
+            v-show="!props.accessByTeam"
             inline-prompt
             :active-text="translate('FormDisplay.available')"
             :inactive-text="translate('FormDisplay.unavailable')"
@@ -14,13 +15,19 @@
 
       <div>
 
-        <el-button type="success" v-if="switchDisplayed" @click="openRecipeDrawer">
+      <template v-if="switchDisplayed" v-show="!props.accessByTeam">
+        <el-button type="success" @click="openRecipeDrawer">
           设置警戒值
         </el-button>
 
         <el-button type="primary" v-if="switchDisplayed" @click="handleQuickDispatch">
           {{ translate('FormDisplay.quickDispatch') }}
         </el-button>
+      </template>
+
+      <el-button type="success" v-if="props.accessByTeam" @click="openQcRecordsDialog" style="margin-left: 10px">
+        {{ translate('FormDataSummary.viewRecords') }}
+      </el-button>
 
       </div>
 
@@ -158,6 +165,21 @@
 
   </el-drawer>
 
+  <QcRecordsTable
+      v-if="props.accessByTeam"
+      :visible="qcRecordsDialogVisible"
+      :loading="loadingQcRecords"
+      :form-label="props.currentForm?.label"
+      :paginated-qc-records="qcRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize)"
+      :displayed-column-headers="reorderedColumnHeaders"
+      :total="qcRecords.length"
+      v-model:visible="qcRecordsDialogVisible"
+      :shortcuts="[]"
+      :table-height="qcRecordsTableHeight"
+      @close="qcRecordsDialogVisible = false"
+      @page-change="currentPage = $event"
+  />
+
 </template>
 
 <script setup>
@@ -175,13 +197,21 @@ import QuickDispatch from "@/components/dispatch/QuickDispatch.vue";
 import {insertTaskSubmissionLog} from "@/services/qcTaskSubmissionLogsService";
 import dayjs from 'dayjs';
 import dispatchedTaskList from "@/components/dispatch/DispatchedTaskList.vue";
+import QcRecordsTable from "@/components/tables/QcRecordsTable.vue";
 import SignaturePadComponent from "@/components/form-manager/SignaturePad.vue";
 import { windowMaskVisible } from '@/globals/mask'
 
 import soundEffect from '@/assets/sound_effect.mp3'; // Import your audio file
 import RecipeSetting from "@/components/form-manager/RecipeSetting.vue";
+import { fetchQcRecords } from "@/services/qcReportingService"; // make sure this is imported
 
-const showRecipeDrawer = ref(false);
+const showRecipeDrawer = ref(false)
+const qcRecordsDialogVisible = ref(false);
+const qcRecords = ref([]);
+const reorderedColumnHeaders = ref([]);
+const loadingQcRecords = ref(true);
+const currentPage = ref(1);
+const pageSize = 15;
 
 const route = useRoute()
 const rt = ref(parseInt(route.query.rt, 10) || 0);
@@ -189,6 +219,8 @@ const showCountdownEnded = ref(false);
 
 const showSignaturePad = ref(false);
 const signatureData = ref(null);
+const otherElementsHeight = 210;
+const qcRecordsTableHeight = ref(window.innerHeight - otherElementsHeight);
 
 const handleSignatureSave = (data) => {
   signatureData.value = data; // Save the base64 image data here
@@ -197,6 +229,10 @@ const handleSignatureSave = (data) => {
 
 const handleSignatureClear = () => {
   signatureData.value = null; // Clear the preview when cleared from the pad
+};
+
+const updateTableHeight = () => {
+  qcRecordsTableHeight.value = window.innerHeight - otherElementsHeight;
 };
 
 // Countdown time setup
@@ -224,6 +260,11 @@ const props = defineProps({
   formSwitched: { // Add formSwitched prop to detect switching
     type: Boolean,
     default: false,
+  },
+  accessByTeam: {
+    type: Number,
+    required: false,
+    default: null,
   }
 });
 
@@ -297,6 +338,10 @@ watch(() => props.currentForm?.qcFormTemplateId, (newFormId, oldFormId) => {
 
 // ✅ Ensure the countdown starts when mounted
 onMounted(() => {
+  if (props.accessByTeam) {
+    enable_form.value = true; // Auto-enable
+    switchDisplayed.value = false; // Hide switch
+  }
   startCountdown();
   // 等待 DOM 渲染完成
   setTimeout(() => {
@@ -310,6 +355,16 @@ onMounted(() => {
 // ✅ Clean up the interval when unmounted
 onUnmounted(() => {
   if (countdownInterval) clearInterval(countdownInterval);
+});
+
+// deal with qc records table height
+onMounted(() => {
+  updateTableHeight();
+  window.addEventListener('resize', updateTableHeight);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateTableHeight);
 });
 
 const clearForm = () => {
@@ -345,7 +400,6 @@ const openRecipeDrawer = () => {
     showRecipeDrawer.value = true;
   });
 };
-
 
 onMounted(() => {
   startCountdown();
@@ -520,6 +574,45 @@ const audio = new Audio(soundEffect);
 //     await new Promise((resolve) => setTimeout(resolve, interval));
 //   }
 // }
+
+const openQcRecordsDialog = async () => {
+  qcRecordsDialogVisible.value = true;
+  loadingQcRecords.value = true;
+
+  // TODO: remove the hardcoded datetime values
+  const formTemplateId = props.currentForm?.qcFormTemplateId || route.params.qcFormTemplateId;
+  const startDateTime = "2025-04-01 00:00:00";
+  const endDateTime = "2025-05-01 23:59:59";
+
+  try {
+    const response = await fetchQcRecords(formTemplateId, startDateTime, endDateTime);
+    qcRecords.value = response.data;
+
+    if (qcRecords.value.length > 0) {
+      let headers = Object.keys(qcRecords.value[0]);
+      headers = headers.filter(h => h !== "_id" && h !== "created_by").map(h => h === "created_at" ? "提交时间" : h);
+      headers.push("_id");
+      reorderedColumnHeaders.value = headers;
+
+      qcRecords.value = qcRecords.value.map(r => {
+        if (r.created_at) {
+          const localDate = new Date(r.created_at);
+          r["提交时间"] = localDate.toLocaleString("zh-CN", {
+            year: "numeric", month: "2-digit", day: "2-digit",
+            hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
+          }).replace(/\//g, "-");
+          delete r.created_at;
+        }
+        return r;
+      });
+    }
+  } catch (err) {
+    console.error("Error fetching records:", err);
+  } finally {
+    loadingQcRecords.value = false;
+  }
+};
+
 
 watch(remainingTime, (newTime) => {
   nextTick(() => {

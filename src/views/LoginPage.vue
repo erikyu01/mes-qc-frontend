@@ -22,7 +22,7 @@
             </el-input>
           </el-form-item>
 
-          <el-form-item prop="captcha" class="captcha-container">
+          <el-form-item prop="userInputIdentifyCodes" class="captcha-container">
             <el-input
                 v-model="form.userInputIdentifyCodes"
                 type="text"
@@ -32,6 +32,7 @@
                 <el-icon><Checked /></el-icon>
               </template>
             </el-input>
+
             <el-tooltip :content="translate('loginPage.refreshCaptchaTooltip')" placement="bottom">
               <SIdentify
                   style="margin-top: 4px; cursor: pointer;"
@@ -94,6 +95,7 @@ export default {
       rules: {
         username: [{ required: true, message: translate('loginPage.usernameMessage'), trigger: 'blur' }],
         password: [{ required: true, message: translate('loginPage.passwordMessage'), trigger: 'blur' }],
+        userInputIdentifyCodes: [{ required: true, message: translate('loginPage.captchaMessage'), trigger: 'blur' }]
       },
       errorMessage: '', // To store any error messages
       loading: false,   // To track loading state
@@ -142,7 +144,7 @@ export default {
         if (!valid) return;
 
         if (this.form.userInputIdentifyCodes !== this.identifyCode) {
-          this.errorMessage = translate('loginPage.errorUserInfoFailed');
+          this.errorMessage = translate('loginPage.errorCaptcha');
           return;
         }
 

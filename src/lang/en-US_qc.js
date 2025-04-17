@@ -50,6 +50,7 @@ export default {
         loginSuccess: 'Login successful!',
         usernameMessage: 'Please input username',
         passwordMessage: 'Please input password',
+        captchaMessage: 'Please input captcha',
         copyright: '© 2024-2025 FPS. Quality Control for MES. All rights reserved.'
     },
     userManagement: {
@@ -182,6 +183,7 @@ export default {
         dataSummary: "Data Summary",
         taskCenter: "My Task Center",
         taskDashboard: "Dashboard",
+        pendingTasks: "Pending Tasks",
         todayTasks: "Today's Tasks",
         futureTasks: "Future Tasks",
         historyTasks: "History Tasks",

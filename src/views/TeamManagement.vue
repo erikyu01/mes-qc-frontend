@@ -412,6 +412,7 @@ import {translate, translateWithParams} from "@/utils/i18n";
 import {assignFormsToTeam, getFormIdsForTeam, removeAllFormsFromTeam} from "@/services/teamFormService";
 import TeamFormTree from "@/components/dispatch/TeamFormTree.vue";
 import {openFormPreviewWindow} from "@/utils/dispatch-utils";
+import { getCurrentLeaderIds } from "@/services/teamService";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -449,6 +450,7 @@ export default {
       loadingUsers: false, // Loading state for the user list
       sortSettings: { prop: "", order: "" },
       selectedTeamName: "", // store the selected team for showing users
+      currentLeaderIds: [], // Stores all current leader IDs
       newTeam: {
         name: "",
         type: "",
@@ -492,6 +494,7 @@ export default {
   created() {
     this.fetchTeamData();
     this.fetchUserOptions();
+    this.fetchCurrentLeaderIds();
   },
   computed: {
     paginatedTeamUsers() {
@@ -642,15 +645,20 @@ export default {
       try {
         const response = await fetchUsers(); // Fetch users from the backend
         if (response.data && response.data.status === "200") {
-          // ✅ Store all users for general use
-          this.userOptions = response.data.data.map((user) => ({
-            id: user.id,
-            name: user.name,
-          }));
+          // Store all users for general use
+          this.userOptions = response.data.data
+              .filter(user => !this.currentLeaderIds.includes(user.id)) // exclude current leaders
+              .map(user => ({
+                id: user.id,
+                name: user.name,
+              }));
 
-          // ✅ Filter only 班长 (role.id === 3)
+          // Filter only 班长 (role.id === 3) TODO: Should be specified in the backend
           this.teamLeaderOptions = response.data.data
-              .filter(user => user.role && user.role.id === 3)
+              .filter(user =>
+                  user.role?.id === 3 &&
+                  (!this.currentLeaderIds.includes(user.id) || user.id === this.editTeam.leader_id)
+              )
               .map(user => ({
                 id: user.id,
                 name: user.name,
@@ -663,6 +671,19 @@ export default {
         console.error("Error fetching user options:", error);
         this.userOptions = [];
         this.teamLeaderOptions = [];
+      }
+    },
+    async fetchCurrentLeaderIds() {
+      try {
+        const response = await getCurrentLeaderIds();
+        if (response.data.status === "200") {
+          this.currentLeaderIds = response.data.data;
+        } else {
+          this.currentLeaderIds = [];
+        }
+      } catch (error) {
+        console.error("Error fetching current leader IDs:", error);
+        this.currentLeaderIds = [];
       }
     },
     async updateUsersForTeam(teamId) {

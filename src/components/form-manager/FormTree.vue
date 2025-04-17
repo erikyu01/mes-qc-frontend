@@ -6,7 +6,12 @@
           style="width: 240px; margin-right: 10px;"
           :placeholder="translate('FormTree.searchPlaceholder')"
       />
-      <el-button :type="isEditMode ? 'success' : 'primary'" @click="toggleEditMode" style="margin-top: 0">
+      <el-button
+          v-if="!props.accessByTeam"
+          :type="isEditMode ? 'success' : 'primary'"
+          @click="toggleEditMode"
+          style="margin-top: 0"
+      >
         {{ isEditMode ? translate('FormTree.cancelEdit') : translate('FormTree.edit') }}
       </el-button>
       <el-button v-if="isEditMode" type="primary" @click="showAppendPopup(null, $event)" style="margin-left: 10px; margin-top: 0">
@@ -97,12 +102,18 @@ import {
   deleteNode,
 } from '@/services/formNodeService.js';
 import { ElMessageBox } from "element-plus";
+import { defineProps } from 'vue';
+import { getFormTreeByTeam } from '@/services/teamFormService';
 
 interface Tree {
   _id: string
   label: string
   children?: Tree[]
 }
+
+const props = defineProps<{
+  accessByTeam?: number;
+}>();
 
 const logNodeData = (node: any, data: any) => {
   console.log('Node:', node)
@@ -150,12 +161,19 @@ const toggleEditMode = () => {
 // Fetch data from the backend
 const fetchFormTreeData = async () => {
   try {
-    const response = await fetchFormNodes();
-    data.value = response.data;
+    const response = props.accessByTeam !== undefined
+        ? await getFormTreeByTeam(props.accessByTeam)
+        : await fetchFormNodes();
+
+    data.value = props.accessByTeam !== undefined
+        ? response.data.data
+        : response.data;
+
   } catch (err) {
     error.value = err.response?.data?.message || translate('FormTree.loadFailed');
   }
 };
+
 
 
 onMounted(fetchFormTreeData)

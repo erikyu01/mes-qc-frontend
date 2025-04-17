@@ -17,7 +17,7 @@
         <div class="key-name">{{ item.label }}</div>
 
         <div class="input-group">
-          <div class="input-label">上线</div>
+          <div class="input-label">上限</div>
           <el-input-number
               v-model="item.upper_control_limit"
               :min="item.lower_control_limit"
@@ -38,7 +38,7 @@
         </div>
 
         <div class="input-group">
-          <div class="input-label">下线</div>
+          <div class="input-label">下限</div>
           <el-input-number
               v-model="item.lower_control_limit"
               :max="item.upper_control_limit"
