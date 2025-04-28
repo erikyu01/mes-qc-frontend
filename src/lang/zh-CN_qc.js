@@ -517,7 +517,7 @@ export default {
             expandButton: '展开',
             deleteDispatchButton: '删除派发计划',
             orderPreview: '工单预览',
-            uncheckAll: '取消全选',
+            uncheckAll: '取消已选',
             userSelectPlaceholder: '请选择人员',
             team: '班组',
             taskDueDateOffset: '任务时限: {input} 分钟',

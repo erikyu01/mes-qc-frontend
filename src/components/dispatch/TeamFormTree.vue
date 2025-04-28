@@ -10,14 +10,18 @@
         <el-icon><Search /></el-icon>
       </template>
     </el-input>
-    <el-button
-        v-if="showOnlySelectedNode === false"
-        type="warning"
-        @click="clearFormSelection"
-        style="height: 32px; width: 80px; line-height: normal; margin: 0"
+    <el-tooltip
+        :content="translate('orderManagement.orderFormDialog.uncheckAll')"
+        placement="top"
     >
-      {{ translate('orderManagement.orderFormDialog.uncheckAll') }}
-    </el-button>
+      <el-button
+          v-if="showOnlySelectedNode === false"
+          type="warning"
+          @click="clearFormSelection"
+          :icon="DocumentRemove"
+          style="height: 32px; width: 50px; line-height: normal; margin: 0; padding: 5px;"
+      />
+    </el-tooltip>
   </div>
   <div class="form-container">
       <el-tree
@@ -50,7 +54,7 @@
 <script lang="ts" setup>
 import {defineEmits, onMounted, ref, watch} from 'vue'
 import {ElButton, ElInput, ElTree} from 'element-plus'
-import {Document, Folder, Search} from '@element-plus/icons-vue'
+import {Document, DocumentRemove, Folder, Search} from '@element-plus/icons-vue'
 import {fetchFormNodes,} from '@/services/formNodeService.js';
 import {translate} from "@/utils/i18n";
 

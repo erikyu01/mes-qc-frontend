@@ -25,12 +25,12 @@
       </el-table>
     </el-aside>
     <el-container>
-      <el-header height="30px">
+      <el-header height="40px">
         <el-input
             v-model="searchQuery"
             :placeholder="translate('userManagement.searchPlaceholder')"
             clearable
-            style="width: 300px;"
+            style="width: 300px; height: 40px"
         >
           <template #prefix>
             <el-icon>
@@ -47,7 +47,7 @@
     <el-aside class="aside-panel-right">
       <!-- Aside Header -->
       <div
-          style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"
+          style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #dcdfe6;"
       >
         <!-- Left: Title -->
         <p v-if="isEditing || showAssignmentForm || selectedEvent?.id" style="margin: 0;">
@@ -58,7 +58,7 @@
         <div
             v-if="selectedEvent?.id && !showAssignmentForm"
         >
-          <el-button type="primary" @click="prefillFormWithAssignmentData">Edit</el-button>
+          <el-button type="primary" @click="fillExistingAssignmentData">Edit</el-button>
           <el-button type="danger" @click="handleDeleteAssignment">Delete</el-button>
         </div>
       </div>
@@ -100,34 +100,46 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item v-if="!assignmentForm.hasCustomRecurrence" prop="startDate" :label="'Start Date'" required>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="Recurring" style="margin-left: 10px;">
+              <el-checkbox
+                  v-model="isAssignmentRecurring"
+                  @change="handleRecurrenceCheckboxChange"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="All Day" style="margin-left: 10px;">
+              <el-checkbox
+                  v-model="assignmentForm.allDay"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-form-item v-if="!isAssignmentRecurring" prop="startDate" :label="'Start Date'" required>
           <el-date-picker
               v-model="assignmentForm.startDate"
-              type="date"
+              :type="assignmentForm.allDay ? 'date' : 'datetime'"
               placeholder="Select start date"
           />
         </el-form-item>
 
-        <el-form-item v-if="!assignmentForm.hasCustomRecurrence" prop="endDate" :label="'End Date'" required>
+        <el-form-item v-if="!isAssignmentRecurring" prop="endDate" :label="'End Date'" required>
           <el-date-picker
               v-model="assignmentForm.endDate"
-              type="date"
+              :type="assignmentForm.allDay ? 'date' : 'datetime'"
               placeholder="Select end date"
-              :disabled="assignmentForm.hasCustomRecurrence"
-          />
-        </el-form-item>
-
-        <el-form-item label="Recurring">
-          <el-checkbox
-              v-model="assignmentForm.hasCustomRecurrence"
-              @change="handleRecurrenceCheckboxChange"
+              :disabled-date="createDisabledEndDate('startDate')"
           />
         </el-form-item>
 
         <el-form-item
-            v-if="assignmentForm.hasCustomRecurrence"
+            v-if="isAssignmentRecurring"
             label-position="top"
             prop="daysOfWeek"
+            style="margin-left: 10px;"
         >
           <el-form-item prop="startRecur" :label="'Recurrence Start Date'" label-position="top">
             <el-date-picker
@@ -142,7 +154,16 @@
                 v-model="assignmentForm.endRecur"
                 type="date"
                 placeholder="Select end date"
+                :disabled-date="createDisabledEndDate('startRecur')"
             />
+          </el-form-item>
+
+          <el-form-item v-if="!assignmentForm.allDay" label ="Start Time" label-position="top">
+            <el-time-picker v-model="assignmentForm.startTime" placeholder="Select start time"/>
+          </el-form-item>
+
+          <el-form-item v-if="!assignmentForm.allDay" label ="End Time" label-position="top">
+            <el-time-picker v-model="assignmentForm.endTime" placeholder="Select end time"/>
           </el-form-item>
 
           <el-form-item prop="daysCheckBoxes" :label="'Repeat On'" label-position="top">
@@ -170,7 +191,9 @@
         </el-form-item>
       </el-form>
 
+      <!-- Save/Cancel buttons for form -->
       <div v-if="showAssignmentForm">
+
         <el-button type="primary" @click="validateAndSave">Save</el-button>
         <el-button @click="handleCancel">Cancel</el-button>
       </div>
@@ -184,10 +207,10 @@
           :width="250"
       >
         <el-descriptions-item label="ID">
-          {{ selectedEvent?.id}}
+          {{ selectedEvent?.id }}
         </el-descriptions-item>
-        <el-descriptions-item label="Group ID">
-          {{ selectedEvent?.groupId || '-' }}
+        <el-descriptions-item v-if="selectedEvent.groupId" label="Group ID">
+          {{ selectedEvent?.groupId }}
         </el-descriptions-item>
         <el-descriptions-item label="Name">
           {{ selectedEvent.title }}
@@ -195,10 +218,10 @@
         <el-descriptions-item label="Team">
           {{ getTeamNameById(selectedEvent.teamId) }}
         </el-descriptions-item>
-        <el-descriptions-item label="Start Date">
+        <el-descriptions-item v-if="selectedEvent.startDate" label="Start Date">
           {{ selectedEvent.startDate || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="End Date">
+        <el-descriptions-item v-if="selectedEvent.endDate" label="End Date">
           {{ selectedEvent.endDate || '-' }}
         </el-descriptions-item>
 
@@ -213,10 +236,10 @@
               <span>Recurring?</span>
             </el-tooltip>
           </template>
-          {{ selectedEvent.hasCustomRecurrence ? 'Yes' : 'No' }}
+          {{ isAssignmentRecurring ? 'Yes' : 'No' }}
         </el-descriptions-item>
 
-        <el-descriptions-item label="Recurrence Days" v-if="selectedEvent.hasCustomRecurrence">
+        <el-descriptions-item label="Days Repeat on" v-if="isAssignmentRecurring">
           {{
             selectedEvent.daysOfWeek?.length
             ? mapDaysOfWeek(selectedEvent.daysOfWeek)
@@ -224,13 +247,22 @@
           }}
         </el-descriptions-item>
 
-        <el-descriptions-item label="Recurrence Start" v-if="selectedEvent.hasCustomRecurrence">
+        <el-descriptions-item label="Recurrence Start Date" v-if="isAssignmentRecurring">
           {{ selectedEvent.startRecur ? formatDateToYMD(selectedEvent.startRecur) : 'Unlimited' }}
         </el-descriptions-item>
 
-        <el-descriptions-item label="Recurrence End" v-if="selectedEvent.hasCustomRecurrence">
+        <el-descriptions-item label="Recurrence End Date" v-if="isAssignmentRecurring">
           {{ selectedEvent.endRecur ? formatDateToYMD(selectedEvent.endRecur) : 'Unlimited' }}
         </el-descriptions-item>
+
+        <el-descriptions-item label="Start Time" v-if="isAssignmentRecurring && !selectedEvent.allDay">
+          {{ selectedEvent.startTime }}
+        </el-descriptions-item>
+
+        <el-descriptions-item label="End Time" v-if="isAssignmentRecurring && !selectedEvent.allDay">
+          {{ selectedEvent.startTime ? selectedEvent.startTime : '-' }}
+        </el-descriptions-item>
+
         <el-descriptions-item label="Accessible Forms" :span="2">
           <TeamFormTree
               :show-only-selected-node="true"
@@ -249,6 +281,7 @@ import FullCalendar from '@fullcalendar/vue3'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import listPlugin from '@fullcalendar/list'
+import multiMonthPlugin from '@fullcalendar/multimonth'
 import interactionPlugin from '@fullcalendar/interaction'
 import allLocales from '@fullcalendar/core/locales-all.js';
 import TeamFormTree from "@/components/dispatch/TeamFormTree.vue";
@@ -281,25 +314,27 @@ export default {
   },
   data(){
     return {
-      showDrawer: false,
       searchQuery: '',
       showAssignmentForm: false,
       showAssignmentDetail: false,
       isEditing: false,
       selectedEvent: null,
+      lastSelectedEventId: null,
+      isAssignmentRecurring: false,
       assignmentForm: {
         id: null,
-        groupId: null,
         title: '',
         startDate: '',
         endDate: '',
         selectedFormIds: [],
         selectedFormLabels: [],
         teamId: null,
-        hasCustomRecurrence: false,
+        groupId: null,
         daysOfWeek: null,
         startRecur: null,
         endRecur: null,
+        startTime: null,
+        endTime: null,
       },
       formRules: {
         title: [{ required: true, message: 'Please enter a name', trigger: 'blur' }],
@@ -307,7 +342,7 @@ export default {
         startDate: [
           {
             validator: (rule, value, callback) => {
-              if (!this.assignmentForm.hasCustomRecurrence && !value) {
+              if (!this.isAssignmentRecurring && !value) {
                 callback(new Error('Please select a start date'));
               } else {
                 callback();
@@ -319,7 +354,7 @@ export default {
         endDate: [
           {
             validator: (rule, value, callback) => {
-              if (!this.assignmentForm.hasCustomRecurrence && !value) {
+              if (!this.isAssignmentRecurring && !value) {
                 callback(new Error('Please select an end date'));
               } else {
                 callback();
@@ -337,18 +372,19 @@ export default {
         ]
       },
       calendarOptions: {
-        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
+        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin, multiMonthPlugin],
         initialView: 'dayGridMonth',
         headerToolbar: {
           left: 'prev,next,today',
           center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
+          right: 'multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay,listWeek',
         },
         views: {
           dayGridMonth: { buttonText: 'Month' },
           timeGridWeek: { buttonText: 'Week' },
           timeGridDay: { buttonText: 'Day' },
-          listWeek: { buttonText: 'List' }
+          listWeek: { buttonText: 'List' },
+          multiMonthYear: { buttonText: 'Year' },
         },
         dateClick: this.handleDateClick,
         eventClick: this.handleEventClick,
@@ -357,14 +393,12 @@ export default {
         eventDrop: this.handleEventDrop,
         eventResize: this.handleEventResize,
         events: [],
-        eventBackgroundColor: '#409EFF',
-        eventBorderColor: '#409EFF',
         eventTextColor: '#000000',
         nowIndicator: true,
         selectMirror: true,
         locales: allLocales,
         locale: this.getCalendarLocale(),
-        editable: true,
+        editable: false,
       },
       teamsOptions: [],
       // Dummy data, will fetch data from backend when ready
@@ -427,70 +461,98 @@ export default {
   methods: {
     translate,
     subTabTitle() {
-      if (this.isEditing) return 'Edit Assignment';
-      if (this.selectedEvent?.id) return 'Details';
+      if (this.isEditing) {
+        return 'Edit Assignment';
+      }
+
+      if (this.selectedEvent?.id) {
+        return 'Assignment Detail';
+      }
+
       return 'New Assignment';
     },
-    handleDateClick: function(arg){
-      const calendarApi = this.calendarApi;
+    handleDateClick: function(arg) {
+      // Revert highlighting on last selected event
+      if (this.lastSelectedEventId) {
+        const calendarApi = this.calendarApi;
+        const lastSelectedEvent = calendarApi.getEventById(this.lastSelectedEventId);
+        const color = this.getColorByTeamId(lastSelectedEvent.extendedProps?.teamId);
+        lastSelectedEvent.setProp('backgroundColor',color);
+        lastSelectedEvent.setProp('borderColor', color);
+        this.lastSelectedEventId = null;
+      }
 
-      calendarApi.getEvents().forEach(e => {
-        const updatedClasses = (e.classNames || []).filter(cls => cls !== 'selected-event');
-        e.setProp('classNames', updatedClasses);
-      });
-
+      // Adjust selection and hides assignment detail
       this.selectedEvent = null;
-
-      this.assignmentForm.startDate = arg.dateStr;
-      this.assignmentForm.endDate = arg.dateStr;
-
       this.showAssignmentDetail = false;
+
+      // Prefill for date and isAllDay
+      this.resetAssignmentFormWithEmptyData();
+      this.assignmentForm.startDate = arg.dateStr;
+      this.assignmentForm.allDay = arg.allDay
+
+      this.isAssignmentRecurring = false;
       this.showAssignmentForm = true;
     },
     handleEventClick(info) {
-      // console.log(info.event);
       const calendarApi = this.calendarApi;
 
-      // Clears all event's selection style class
-      calendarApi.getEvents().forEach(e => {
-        e.setProp('classNames', []);
-      });
-      info.event.setProp('classNames', ['selected-event']);
+      // Remove highlight on last selected event
+      if (this.lastSelectedEventId) {
+        if (this.lastSelectedEventId !== info.event.id) {
+          const lastSelectedEvent = calendarApi.getEventById(this.lastSelectedEventId);
+          const color = this.getColorByTeamId(lastSelectedEvent.extendedProps.teamId);
+          lastSelectedEvent.setProp('backgroundColor',color);
+          lastSelectedEvent.setProp('borderColor', color);
+        }
+      }
 
+      // Highlight currently selected event
       const event = calendarApi.getEventById(info.event.id);
-      // console.log(event);
+      event.setProp('backgroundColor','#bce8f14d');
+      event.setProp('borderColor','#bce8f1');
+      this.lastSelectedEventId = info.event.id;
+
       // TODO: fetch data of this event's id from backend instead of from calendar when service is ready
-      // Transform event object to assignmentForm object
-      this.selectedEvent = {
-        id: info.event.id,
-        groupId: info.event.groupId || null,
-        title: info.event.title,
-        startDate: info.event.startStr,
-        endDate: info.event.endStr,
-        selectedFormIds: info.event.extendedProps?.selectedFormIds || [],
-        selectedFormLabels: info.event.extendedProps?.selectedFormLabels || [],
-        teamId: info.event.extendedProps.teamId,
-        hasCustomRecurrence: !!info.event._def.recurringDef?.typeData.daysOfWeek,
-        daysOfWeek: info.event._def.recurringDef?.typeData.daysOfWeek || null,
-        startRecur: info.event._def.recurringDef?.typeData.startRecur || null,
-        endRecur: info.event._def.recurringDef?.typeData.endRecur || null,
-      };
+      // Store selected event for later when editing or deleting
+      this.selectedEvent = Object.fromEntries(
+          Object.entries({
+            id: info.event.id,
+            teamId: info.event.extendedProps?.teamId,
+            title: info.event.title,
+            startDate: info.event.startStr,
+            endDate: info.event.endStr,
+            allDay: info.event.allDay,
+            selectedFormIds: info.event.extendedProps?.selectedFormIds,
+            selectedFormLabels: info.event.extendedProps?.selectedFormLabels,
+            groupId: info.event.groupId,
+            daysOfWeek: info.event._def.recurringDef?.typeData?.daysOfWeek,
+            startRecur: info.event._def.recurringDef?.typeData?.startRecur,
+            endRecur: info.event._def.recurringDef?.typeData?.endRecur,
+            startTime: info.event.startTime,
+            endTime: info.event.endTime,
+          }).filter(([_, value]) => value !== null && value !== undefined && value !== "undefined" && value !== "")
+      );
 
-      // console.log(this.selectedEvent)
+      console.log("selected Event:");
+      console.log(this.selectedEvent);
 
+      this.isAssignmentRecurring = !!this.selectedEvent.daysOfWeek;
       this.showAssignmentDetail = true;
       this.showAssignmentForm = false;
     },
-    prefillFormWithAssignmentData() {
+    fillExistingAssignmentData() {
       const calendarApi = this.calendarApi;
       const event = calendarApi.getEventById(this.selectedEvent.id);
 
-      // Make the selected event draggable/resizable only
+      // Make the selected event draggable/resizable
       if (event) {
+        console.log('set selected event startEditable and duration editable: ', this.selectedEvent.id);
         event.setProp('startEditable', true);
         event.setProp('durationEditable', true);
 
-        // Cache original values in case of canceling edit
+        console.log('cache original event data');
+        // Cache original values in case of canceling this edit
         this._originalEventData = {
           id: event.id,
           start: event.start,
@@ -498,18 +560,165 @@ export default {
         };
       }
 
+      // Prefill form from selected event
       this.assignmentForm = {
         ...this.selectedEvent
       };
 
-      this.showAssignmentForm = true;
+      console.log("prefilled assignment form:");
+      console.log(this.assignmentForm);
       this.showAssignmentDetail = false;
       this.isEditing = true;
+      this.showAssignmentForm = true;
+    },
+    submitAssignment() {
+      // Get form's data
+      const {
+        id,
+        groupId,
+        title,
+        startDate,
+        endDate,
+        teamId,
+        selectedFormIds,
+        selectedFormLabels,
+        daysOfWeek,
+        startRecur,
+        endRecur,
+        allDay,
+        startTime,
+        endTime,
+      } = this.assignmentForm;
+
+      // TODO: Generated id for new assignment, should delegate to backend when ready.
+      const tempId = String(Date.now());
+
+      // Setup recurrence related kv
+      const recurrenceData = this.isAssignmentRecurring
+          ? {
+            groupId: this.isEditing ? groupId : tempId,
+            daysOfWeek: daysOfWeek,
+            startRecur: startRecur,
+            endRecur: endRecur,
+            startTime: startTime,
+            endTime: endTime,
+          }
+          : {};
+
+      // Filter out invalid kv pairs
+      const eventPayload = Object.fromEntries(
+          Object.entries({
+            id: this.isEditing ? id : tempId,
+            title,
+            start: startDate,
+            end: endDate,
+            allDay: allDay,
+            ...recurrenceData,
+            extendedProps: {
+              selectedFormIds,
+              selectedFormLabels,
+              teamId,
+            }}).filter(([_, value]) => value !== null && value !== undefined && value !== "undefined" && value !== ""));
+
+      console.log("submitted event:")
+      console.log(eventPayload);
+
+      console.log("teams dummy data before updating");
+      console.log(this.teams);
+
+      // TODO: Replace persistent data update with backend save when ready
+      const oldTeamId = this.selectedEvent?.teamId ?? null;
+      const newTeamId = teamId; // New team from form
+
+      if (this.isEditing && oldTeamId !== null) {
+        this.updateEventAcrossTeams(id, oldTeamId, newTeamId, eventPayload);
+      } else {
+        this.createNewEvent(newTeamId, eventPayload);
+      }
+
+      // TODO: Update calendar once received success confirmation from backend, need to transform
+      // assignmentForm into event object format later on
+      const calendarApi = this.calendarApi;
+
+      if (this.isEditing && id) {
+        const existingEvent = calendarApi.getEventById(eventPayload.id);
+        if (existingEvent) {
+          for (const [key, value] of Object.entries(eventPayload)) {
+            if (key === 'extendedProps') {
+              for (const [k, v] of Object.entries(value)) {
+                existingEvent.setExtendedProp(k, v);
+              }
+            } else if (value !== undefined) {
+              existingEvent.setProp(key, value);
+            }
+          }
+          existingEvent.setProp('startEditable', false);
+          existingEvent.setProp('durationEditable', false);
+          existingEvent.setProp('backgroundColor', this.getColorByTeamId(eventPayload.extendedProps.teamId));
+          existingEvent.setProp('borderColor', this.getColorByTeamId(eventPayload.extendedProps.teamId));
+
+          console.log('updating event');
+        }
+      } else {
+        calendarApi.addEvent({
+          ...eventPayload,
+          startEditable: false,
+          durationEditable: false,
+          backgroundColor: this.getColorByTeamId(eventPayload.extendedProps.teamId),
+          borderColor: this.getColorByTeamId(eventPayload.extendedProps.teamId),
+        });
+
+        console.log('adding event');
+        console.log({
+          ...eventPayload,
+          startEditable: false,
+          durationEditable: false,
+          backgroundColor: this.getColorByTeamId(eventPayload.extendedProps.teamId),
+          borderColor: this.getColorByTeamId(eventPayload.extendedProps.teamId),
+        });
+      }
+
+      this.isAssignmentRecurring = false;
+      this.showAssignmentForm = false;
+
+      if(this.isEditing){
+        this.isEditing = false;
+        this.showAssignmentDetail = true;
+      }
+
+      this.resetAssignmentFormWithEmptyData();
+      this.refreshVisibleEvents();
+    },
+    handleDeleteAssignment() {
+      const eventId = this.selectedEvent?.id;
+      const teamId = this.selectedEvent?.teamId;
+
+      if (!eventId || !teamId) return;
+
+      // TODO: replace with backend delete when ready
+      // Find the correct team directly
+      const team = this.teams.find(t => t.id === teamId);
+      if (team) {
+        team.events = team.events.filter(e => e.id !== eventId);
+      } else {
+        console.warn(`Team with ID ${teamId} not found for deleting event ID ${eventId}`);
+      }
+
+      // Remove from FullCalendar
+      const calendarApi = this.calendarApi;
+      const event = calendarApi.getEventById(this.selectedEvent.id);
+      event?.remove();
+
+      this.selectedEvent = null;
+      this.lastSelectedEventId = null;
+      this.showAssignmentDetail = false;
+      this.$message.success("Assignment deleted");
+      this.refreshVisibleEvents();
     },
     handleCancel() {
-      this.showAssignmentForm = false
-      const calendarApi = this.calendarApi;
-      if (this.assignmentForm.id){
+      // Reset changes on event edited
+      if (this.assignmentForm.id) {
+        const calendarApi = this.calendarApi;
         const existingEvent = calendarApi.getEventById(this.assignmentForm.id);
         const { id, start, end } = this._originalEventData;
 
@@ -523,14 +732,15 @@ export default {
         this._originalEventData = null;
       }
 
-      // Clear existing event's selection class
-      calendarApi.getEvents().forEach(e => {
-        const cleaned = (e.classNames || []).filter(cls => cls !== 'selected-event');
-        e.setProp('classNames', cleaned);
-      });
-
       this.resetAssignmentFormWithEmptyData();
       this.isEditing = false;
+
+      if (this.selectedEvent){
+        this.showAssignmentDetail = true;
+      }
+
+      this.showAssignmentForm = false;
+      this.isAssignmentRecurring = false;
     },
     handleEventDrop(info) {
       const event = info.event;
@@ -546,115 +756,6 @@ export default {
       if (this.isEditing && this.assignmentForm.id === event.id) {
         this.assignmentForm.endDate = event.endStr;
       }
-    },
-    submitAssignment() {
-      // Get form's data
-      const {
-        id,
-        groupId,
-        title,
-        startDate,
-        endDate,
-        teamId,
-        selectedFormIds,
-        selectedFormLabels,
-        hasCustomRecurrence,
-        daysOfWeek,
-        startRecur,
-        endRecur,
-      } = this.assignmentForm;
-
-      //
-      const recurrenceData = hasCustomRecurrence
-          ? {
-            daysOfWeek: Array.isArray(daysOfWeek) ? daysOfWeek : [0,1,2,3,4,5,6], // default to every day recurring
-            startRecur: startRecur || null, // default to no limit
-            endRecur: endRecur || null, // default to no limit
-          }
-          : {};
-
-      const newEvent = {
-        id,
-        title,
-        start: startDate,
-        end: endDate,
-        allDay: true,
-        groupId: groupId || undefined,
-        ...recurrenceData,
-        extendedProps: {
-          selectedFormIds,
-          selectedFormLabels,
-          teamId
-        },
-      };
-
-      // TODO: Replace dummy update with backend save when ready
-      const targetTeam = this.teams.find(t => t.id === teamId);
-      if (targetTeam) {
-        // Edit
-        if (this.isEditing && id) {
-          const index = targetTeam.events.findIndex(e => e.id === id);
-          if (index !== -1) {
-            targetTeam.events[index] = { ...targetTeam.events[index], ...newEvent };
-          }
-        } else {
-        // Create
-          newEvent.id = String(Date.now());
-          targetTeam.events.push(newEvent);
-        }
-      }
-
-      // TODO: Update calendar once received success confirmation from backend
-      // Need to transform assignmentForm into event object format later on
-      const calendarApi = this.calendarApi;
-
-      if (this.isEditing && id) {
-        const existingEvent = calendarApi.getEventById(newEvent.id);
-        if (existingEvent) {
-          for (const [key, value] of Object.entries(newEvent)) {
-            if (key === 'extendedProps') {
-              for (const [k, v] of Object.entries(value)) {
-                existingEvent.setExtendedProp(k, v);
-              }
-            } else if (value !== undefined) {
-              existingEvent.setProp(key, value);
-            }
-          }
-          existingEvent.setProp('startEditable', false);
-          existingEvent.setProp('durationEditable', false);
-        }
-      } else {
-        calendarApi.addEvent({
-          ...newEvent,
-          backgroundColor: this.teams.find(t => t.id === teamId)?.color || '#409EFF',
-          borderColor: this.teams.find(t => t.id === teamId)?.color || '#409EFF'
-        });
-      }
-
-      this.showAssignmentForm = false;
-      this.isEditing = false;
-      this.resetAssignmentFormWithEmptyData();
-      this.refreshVisibleEvents();
-    },
-    handleDeleteAssignment() {
-      const eventId = this.selectedEvent?.id;
-      if (!eventId) return;
-
-      // TODO: replace with backend delete when ready
-      const team = this.teams.find(t => t.events.some(e => e.id === eventId));
-      if (team) {
-        team.events = team.events.filter(e => e.id !== eventId);
-      }
-
-      // Update dummy data
-      const calendarApi = this.calendarApi;
-      const event = calendarApi.getEventById(this.selectedEvent.id);
-      event?.remove();
-
-      this.selectedEvent = null;
-      this.showAssignmentDetail = false;
-      this.$message.success("Assignment deleted");
-      this.refreshVisibleEvents();
     },
     handleFormChanged(formObjArray){
       this.assignmentForm.selectedFormIds = formObjArray.map(obj => obj.id);
@@ -680,6 +781,9 @@ export default {
         console.error("Error fetching teams:", error);
         this.teamsOptions = [];
       }
+    },
+    getColorByTeamId(teamId){
+      return this.teams.find(t => t.id === teamId).color;
     },
     refreshVisibleEvents() {
       const query = this.searchQuery.toLowerCase();
@@ -731,7 +835,7 @@ export default {
       })
     },
     validateDaysOfWeek(rule, value, callback) {
-      if (this.assignmentForm.hasCustomRecurrence && (!value || value.length === 0)) {
+      if (this.isAssignmentRecurring && (!value || value.length === 0)) {
         callback(new Error('Please select at least one day'));
       } else {
         callback();
@@ -747,17 +851,18 @@ export default {
     resetAssignmentFormWithEmptyData(){
       this.assignmentForm = {
         id: null,
-        groupId: null,
         title: '',
         startDate: '',
         endDate: '',
         selectedFormIds: [],
         selectedFormLabels: [],
         teamId: null,
-        hasCustomRecurrence: false,
+        groupId: null,
         daysOfWeek: null,
         startRecur: null,
         endRecur: null,
+        startTime: null,
+        endTime: null,
       };
     },
     mapDaysOfWeek(dayNumbers) {
@@ -772,6 +877,57 @@ export default {
       const day = String(d.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     },
+    updateEventAcrossTeams(eventId, oldTeamId, newTeamId, eventPayload) {
+      if (oldTeamId === newTeamId) {
+        // Same team: update the event directly
+        const team = this.teams.find(t => t.id === newTeamId);
+        if (team) {
+          const index = team.events.findIndex(e => e.id === eventId);
+          if (index !== -1) {
+            team.events[index] = { ...team.events[index], ...eventPayload };
+          } else {
+            console.warn(`Event id ${eventId} not found in team id ${newTeamId}`);
+          }
+        } else {
+          console.warn(`Target team id ${newTeamId} not found`);
+        }
+      } else {
+        // Different team: move event
+        const oldTeam = this.teams.find(t => t.id === oldTeamId);
+        const newTeam = this.teams.find(t => t.id === newTeamId);
+
+        if (oldTeam) {
+          oldTeam.events = oldTeam.events.filter(e => e.id !== eventId);
+        } else {
+          console.warn(`Old team id ${oldTeamId} not found`);
+        }
+
+        if (newTeam) {
+          newTeam.events.push(eventPayload);
+        } else {
+          console.warn(`New team id ${newTeamId} not found`);
+        }
+      }
+    },
+    createNewEvent(teamId, eventPayload) {
+      const team = this.teams.find(t => t.id === teamId);
+      if (team) {
+        team.events.push(eventPayload);
+      } else {
+        console.warn(`Target team id ${teamId} not found`);
+      }
+    },
+    createDisabledEndDate(startFieldName) {
+      return (date) => {
+        const startDate = this.assignmentForm[startFieldName];
+        if (!startDate) return false;
+
+        const selectedDate = new Date(date).getTime();
+        const startDateTime = new Date(startDate).getTime();
+
+        return selectedDate < startDateTime;
+      };
+    }
   },
   mounted() {
     this.calendarOptions.events = this.teams.flatMap(team =>
