@@ -108,9 +108,9 @@
           <el-input v-model="assignmentForm.title" />
         </el-form-item>
 
-        <el-form-item prop="teamId" :label="'Team'" required>
+        <el-form-item prop="extendedProps.teamId" :label="'Team'" required>
           <el-select
-              v-model="assignmentForm.teamId"
+              v-model="assignmentForm.extendedProps.teamId"
               filterable
               :placeholder="translate('userManagement.addDialog.assignedTeamPlaceHolder')"
           >
@@ -152,20 +152,20 @@
           </el-col>
         </el-row>
 
-        <el-form-item v-if="!isAssignmentRecurring" prop="startDate" :label="'Start Date'" required>
+        <el-form-item v-if="!isAssignmentRecurring" prop="start" :label="'Start Date'" required>
           <el-date-picker
-              v-model="assignmentForm.startDate"
+              v-model="assignmentForm.start"
               :type="assignmentForm.allDay ? 'date' : 'datetime'"
               placeholder="Select start date"
           />
         </el-form-item>
 
-        <el-form-item v-if="!isAssignmentRecurring" prop="endDate" :label="'End Date'" required>
+        <el-form-item v-if="!isAssignmentRecurring" prop="end" :label="'End Date'" required>
           <el-date-picker
-              v-model="assignmentForm.endDate"
+              v-model="assignmentForm.end"
               :type="assignmentForm.allDay ? 'date' : 'datetime'"
               placeholder="Select end date"
-              :disabled-date="createDisabledEndDate('startDate')"
+              :disabled-date="createDisabledEndDate('start')"
           />
         </el-form-item>
 
@@ -215,10 +215,10 @@
           </el-form-item>
         </el-form-item>
 
-        <el-form-item prop="selectedFormIds" :label="'Accessible Form'" required label-position="top">
+        <el-form-item prop="extendedProps.formTreeNodeIds" :label="'Accessible Form'" required label-position="top">
           <TeamFormTree
               :show-only-selected-node="false"
-              :selected-form-ids="assignmentForm.selectedFormIds"
+              :selected-form-ids="assignmentForm.extendedProps.formTreeNodeIds"
               :expand-all-nodes="false"
               @update-selected-forms="handleFormChanged"
           />
@@ -255,32 +255,34 @@
                 width="300"
             >
               <template #default>
-                <div v-if="teamDetails[selectedEvent.teamId]">
-                  <p><b>ID:</b> {{ teamDetails[selectedEvent.teamId].id }}</p>
-                  <p><b>Type:</b> {{ teamDetails[selectedEvent.teamId].type || 'N/A' }}</p>
-                  <p><b>Leader:</b> {{ teamDetails[selectedEvent.teamId].leader || 'N/A' }}</p>
-                  <p><b>Description:</b> {{ teamDetails[selectedEvent.teamId].description || 'N/A' }}</p>
-                  <p><b>Members:</b></p>
-                  <ul style="padding-left: 20px;">
-                    <li v-for="member in teamDetails[selectedEvent.teamId].members" :key="member.id">
-                      {{ member.name }} ({{ member.role.name }})
-                    </li>
-                  </ul>
+                <div v-if="teamDetails[selectedEvent.extendedProps.teamId]">
+                  <p><b>ID:</b> {{ teamDetails[selectedEvent.extendedProps.teamId].id }}</p>
+                  <p><b>Type:</b> {{ teamDetails[selectedEvent.extendedProps.teamId].type || '-' }}</p>
+                  <p><b>Leader:</b> {{ teamDetails[selectedEvent.extendedProps.teamId].leader || '-' }}</p>
+                  <p><b>Description:</b> {{ teamDetails[selectedEvent.extendedProps.teamId].description || '-' }}</p>
+                  <template v-if="teamDetails[selectedEvent.extendedProps.teamId].members?.length > 0">
+                    <p><b>Members:</b></p>
+                    <ul style="padding-left: 20px;">
+                      <li v-for="member in teamDetails[selectedEvent.extendedProps.teamId].members" :key="member.id">
+                        {{ member.name }} ({{ member.role.name }})
+                      </li>
+                    </ul>
+                  </template>
                 </div>
                 <div v-else>Loading...</div>
               </template>
               <template #reference>
-                {{ getTeamNameById(selectedEvent.teamId) }}
+                {{ getTeamNameById(selectedEvent.extendedProps.teamId) }}
               </template>
             </el-popover>
           </el-tag>
         </el-descriptions-item>
 
-        <el-descriptions-item v-if="selectedEvent.startDate" label="Start Date">
-          {{ selectedEvent.startDate || '-' }}
+        <el-descriptions-item v-if="selectedEvent.start" label="Start Date">
+          {{ formatDate(selectedEvent.start, 'yyyy-MM-dd HH:mm') || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item v-if="selectedEvent.endDate" label="End Date">
-          {{ selectedEvent.endDate || '-' }}
+        <el-descriptions-item v-if="selectedEvent.end" label="End Date">
+          {{ formatDate(selectedEvent.end, 'yyyy-MM-dd HH:mm') || '-' }}
         </el-descriptions-item>
 
         <el-descriptions-item v-if="selectedEvent.groupId" label="Group ID">
@@ -288,11 +290,11 @@
         </el-descriptions-item>
 
         <el-descriptions-item label="Recurrence Start Date" v-if="isAssignmentRecurring">
-          {{ selectedEvent.startDateRecur ? formatDateToYMD(selectedEvent.startDateRecur) : 'Unlimited' }}
+          {{ selectedEvent.startRecur ? formatDate(selectedEvent.startRecur, 'yyyy-MM-dd') : 'Unlimited' }}
         </el-descriptions-item>
 
         <el-descriptions-item label="Recurrence End Date" v-if="isAssignmentRecurring">
-          {{ selectedEvent.endDateRecur ? formatDateToYMD(selectedEvent.endDateRecur) : 'Unlimited' }}
+          {{ selectedEvent.endRecur ? formatDate(selectedEvent.endRecur, 'yyyy-MM-dd') : 'Unlimited' }}
         </el-descriptions-item>
 
         <el-descriptions-item label="Repeated On" v-if="isAssignmentRecurring">
@@ -304,19 +306,18 @@
         </el-descriptions-item>
 
         <el-descriptions-item label="Daily Start Time" v-if="isAssignmentRecurring && !selectedEvent.allDay">
-          {{ selectedEvent.startTime ? selectedEvent.startTime : '-' }}
+          {{ selectedEvent.startTime ? formatDate(selectedEvent.startTime, 'HH:mm') : '-' }}
         </el-descriptions-item>
 
         <el-descriptions-item label="Daily End Time" v-if="isAssignmentRecurring && !selectedEvent.allDay">
-          {{ selectedEvent.endTime ? selectedEvent.endTime : '-' }}
+          {{ selectedEvent.endTime ? formatDate(selectedEvent.endTime, 'HH:mm') : '-' }}
         </el-descriptions-item>
 
-        <el-descriptions-item label="Accessible Forms" :span="2">
+        <el-descriptions-item label="Accessible Forms">
           <TeamFormTree
               :show-only-selected-node="true"
-              :selected-form-ids="selectedEvent.selectedFormIds"
+              :selected-form-ids="selectedEvent.extendedProps.formTreeNodeIds"
               :expand-all-nodes="true"
-              @update-selected-forms="handleFormChanged"
           />
         </el-descriptions-item>
       </el-descriptions>
@@ -470,6 +471,7 @@ export default {
   },
   data(){
     return {
+      isLoadingCalendar: false, // currently not in use, seems to be very distracting
       searchQuery: '',
       tourEnabled: false,
       teamDetails: {},
@@ -483,12 +485,13 @@ export default {
       isAssignmentRecurring: false,
       assignmentForm: {
         id: null,
-        title: '',
-        startDate: '',
-        endDate: '',
-        selectedFormIds: [],
-        selectedFormLabels: [],
-        teamId: null,
+        title: null,
+        start: null,
+        end: null,
+        extendedProps: {
+          teamId: null,
+          formTreeNodeIds: [],
+        },
         groupId: null,
         daysOfWeek: null,
         startRecur: null,
@@ -498,8 +501,8 @@ export default {
       },
       formRules: {
         title: [{ required: true, message: 'Please enter a name', trigger: 'blur' }],
-        teamId: [{ required: true, message: 'Please select a team', trigger: 'change' }],
-        startDate: [
+        'extendedProps.teamId': [{ required: true, message: 'Please select a team', trigger: 'change' }],
+        start: [
           {
             validator: (rule, value, callback) => {
               if (!this.isAssignmentRecurring && !value) {
@@ -511,7 +514,7 @@ export default {
             trigger: 'change'
           }
         ],
-        endDate: [
+        end: [
           {
             validator: (rule, value, callback) => {
               if (!this.isAssignmentRecurring && !value) {
@@ -523,7 +526,7 @@ export default {
             trigger: 'change'
           }
         ],
-        selectedFormIds: [{ type: 'array', required: true, message: 'Please select at least one form', trigger: 'change' }],
+        'extendedProps.formTreeNodeIds': [{ type: 'array', required: true, message: 'Please select at least one form', trigger: 'change' }],
         daysOfWeek: [
           {
             validator: this.validateDaysOfWeek,
@@ -562,74 +565,22 @@ export default {
       },
       teamsOptions: [],
       // Dummy data, will fetch data from backend when ready
-      visibleTeams: new Set([1, 2]),
-      teams: [
-        {
-          id: 1,
-          name: '大川组',
-          color: '#f94144',
-          events:[
-            {
-              id: 1,
-              title: 'Form set C',
-              date: '2025-04-21',
-              start: '2025-04-21',
-              end: '2025-04-24',
-              allDays: true,
-              extendedProps: {
-                selectedFormIds: ['f308781d-efe5-4224-8bc9-5b8b4314e798', '37452b87-c08e-47f3-a659-677efacdf328'],
-                selectedFormLabels: ['感官检测表单', '来料检测表单'],
-                teamId: 1,
-              },
-              startEditable: false,
-              durationEditable: false,
-            },
-          ]
-        },
-        {
-          id: 2,
-          name: '中川组',
-          color: '#90be6d',
-          events:[
-            {
-              id: 3,
-              title: 'Form set B',
-              date: '2025-04-07',
-              allDays: true,
-              extendedProps: {
-                selectedFormIds: ['f308781d-efe5-4224-8bc9-5b8b4314e798'],
-                selectedFormLabels: ['感官检测表单'],
-                teamId: 2,
-              },
-              daysOfWeek:[2,4],
-              startEditable: false,
-              durationEditable: false,
-              groupId: 3,
-            }
-          ]
-        },
-        {
-          id: 3,
-          name: '小川组',
-          color: '#f8961e',
-          events:[
-          ]
-        },
-      ],
+      visibleTeams: new Set(),
       calendarAssignments: [],
       calendarEvents: [],
+      selectedHighlightColor: '#b3b3b3',
       colors: [
-        '#f94144',
-        '#f8961e',
-        '#f8db1e',
-        '#90be6d',
-        '#00ff48',
-        '#00ffbb',
-        '#00eaff',
-        '#0080ff',
-        '#8c00ff',
-        '#dd00ff',
-        '#ff00c3',
+        '#ff5659',
+        '#f8b25d',
+        '#f8e462',
+        '#a1f860',
+        '#76fd9c',
+        '#83fad9',
+        '#52eefb',
+        '#5cacfb',
+        '#b459ff',
+        '#e459fa',
+        '#f85ed4',
       ]
     }
   },
@@ -638,18 +589,7 @@ export default {
       // TODO: temporarily use cancel to revert changes in case edit is not confirm
       this.handleCancel();
 
-      const calendarApi = this.calendarApi;
-
-      // Revert highlighting on last selected event
-      if (this.lastSelectedEventId) {
-        const lastSelectedEvent = calendarApi.getEventById(this.lastSelectedEventId);
-        const color = this.getColorByTeamId(lastSelectedEvent.extendedProps?.teamId);
-        lastSelectedEvent.setProp('backgroundColor',color);
-        lastSelectedEvent.setProp('borderColor', color);
-        lastSelectedEvent.setProp('startEditable', false);
-        lastSelectedEvent.setProp('durationEditable', false);
-        this.lastSelectedEventId = null;
-      }
+      this.revertLastSelectedEvent();
 
       // Adjust selection and hides assignment detail
       this.selectedEvent = null;
@@ -657,7 +597,7 @@ export default {
 
       // Prefill for date and isAllDay
       this.resetAssignmentFormWithEmptyData();
-      this.assignmentForm.startDate = arg.date;
+      this.assignmentForm.start = arg.date;
       this.assignmentForm.allDay = arg.allDay
 
       this.isAssignmentRecurring = false;
@@ -665,39 +605,74 @@ export default {
     },
     async handleEventClick(info) {
       // TODO: temporarily use cancel to revert changes in case edit is not confirm
-      this.handleCancel();
+      // this.handleCancel();
 
-      const calendarApi = this.calendarApi;
-
-      // Remove highlight on last selected event
-      if (this.lastSelectedEventId && (this.lastSelectedEventId !== info.event.id)) {
-        const lastSelectedEvent = calendarApi.getEventById(this.lastSelectedEventId);
-        const color = this.getColorByTeamId(lastSelectedEvent.extendedProps.teamId);
-        lastSelectedEvent.setProp('backgroundColor', color);
-        lastSelectedEvent.setProp('borderColor', color);
-        lastSelectedEvent.setProp('startEditable', false);
-        lastSelectedEvent.setProp('durationEditable', false);
-      }
+      this.revertLastSelectedEvent(info.event.id)
 
       // Highlight currently selected event
-      const event = calendarApi.getEventById(info.event.id);
-      event.setProp('backgroundColor', '#bce8f14d');
-      event.setProp('borderColor', '#bce8f1');
+      info.event.setProp('backgroundColor', this.selectedHighlightColor);
+      info.event.setProp('borderColor', this.selectedHighlightColor);
       this.lastSelectedEventId = info.event.id;
 
       // Setup data to display
-      this.selectedEvent = this.calendarAssignments.find(assignment => assignment.id == info.event.id);
-      this.selectedEvent.selectedFormIds = this.selectedEvent.formTreeNodeIds || [];
-      this.selectedEvent.selectedFormLabels = this.selectedEvent.selectedFormIds.map(id => this.formMap[id] || "(unknown label)");
-      this.isAssignmentRecurring = !!this.selectedEvent.daysOfWeek;
-      await this.fetchTeamDetails(this.selectedEvent.teamId);
+      this.selectedEvent = {
+        id: info.event.id,
+        allDay: info.event.allDay,
+        title: info.event.title,
+        extendedProps: {
+          ...info.event.extendedProps, // clone to avoid readonly issues
+          formTreeNodeLabels: (info.event.extendedProps.formTreeNodeIds || []).map(
+              id => this.formMap[id] || "(unknown label)"
+          )
+        },
+      }
+
+      // Fetch recurrence related data
+      const recurringDef = info.event._def?.recurringDef?.typeData;
+
+      if (recurringDef) {
+        if (info.event._def.groupId){
+          this.selectedEvent.groupId = info.event._def.groupId;
+        }
+
+        if (recurringDef.daysOfWeek) {
+          this.isAssignmentRecurring = true;
+          this.selectedEvent.daysOfWeek = recurringDef.daysOfWeek;
+        }
+
+        if (recurringDef.startRecur) {
+          this.selectedEvent.startRecur = recurringDef.startRecur;
+        }
+
+        if (recurringDef.endRecur) {
+          this.selectedEvent.endRecur = recurringDef.endRecur;
+        }
+
+        if (recurringDef.startTime) {
+          this.selectedEvent.startTime = this.durationToDate(recurringDef.startTime);
+        }
+
+        if (recurringDef.endTime) {
+          this.selectedEvent.endTime = this.durationToDate(recurringDef.endTime);
+        }
+      } else {
+        this.isAssignmentRecurring = false;
+      }
+
+      // Fetch startDate & endDate if not a recurring event
+      if (!this.isAssignmentRecurring) {
+        this.selectedEvent.start = info.event.start;
+        this.selectedEvent.end = info.event.end;
+      }
+
+      await this.fetchTeamDetails(this.selectedEvent.extendedProps.teamId);
 
       // Show detail window
       this.showAssignmentDetail = true;
       this.showAssignmentForm = false;
+      console.log('handleEventClick: ', this.selectedEvent);
     },
     handleEditClick() {
-      console.log('edit clicked');
       // Set the selected event draggable/resizable
       const calendarApi = this.calendarApi;
       const event = calendarApi.getEventById(this.selectedEvent.id);
@@ -712,32 +687,34 @@ export default {
           start: event.start,
           end: event.end
         };
+
+        console.log('Change selected event to be drag and resizable, cached original data');
       }
 
       // Prepare form with selected event
-      this.assignmentForm = {
-        ...this.selectedEvent
-      };
+      // this.assignmentForm = {
+      //   ...this.selectedEvent
+      // };
 
-      console.log("prefilled assignment form:");
-      console.log(this.assignmentForm);
+      this.assignmentForm = JSON.parse(JSON.stringify(this.selectedEvent));
 
       // Show form window
       this.showAssignmentDetail = false;
       this.isEditing = true;
       this.showAssignmentForm = true;
+
+      console.log("prefilled assignment form:", this.assignmentForm);
     },
     async handleSubmitClick() {
+      // TODO: this expects FC event format
       // Destruct assignment form data
       const {
         id,
         groupId,
         title,
-        startDate,
-        endDate,
-        teamId,
-        selectedFormIds,
-        selectedFormLabels,
+        start,
+        end,
+        extendedProps,
         daysOfWeek,
         startRecur,
         endRecur,
@@ -762,31 +739,24 @@ export default {
       const eventPayload = Object.fromEntries(
           Object.entries({
             name: title,
-            startDate,
-            endDate,
+            startDate: start,
+            endDate: end,
             allDay,
             ...recurrenceData,
-            formTreeNodeIds: selectedFormIds,
-            teamId,
+            formTreeNodeIds: extendedProps.formTreeNodeIds,
+            teamId: extendedProps.teamId,
           }).filter(([_, value]) => value !== null && value !== undefined && value !== "undefined" && value !== ""));
 
-      console.log("submitted event payload:")
-      console.log(eventPayload);
-
       const currentUserId = this.$store.getters.getUser.id;
-      if (this.isEditing) {
-        eventPayload.updated_by = currentUserId;
-        const response = await updateCalendarAssignment(id, eventPayload);
-        if (response.data.status === 200) {
-          this.$message.success("Successfully updated calendar assignment");
-        }
-      } else {
-        eventPayload.created_by = currentUserId;
-        const response = await createCalendarAssignment(eventPayload);
-        if (response.data.status === 200) {
-          this.$message.success("Successfully created calendar assignment");
-        }
+
+      const response = this.isEditing
+          ? await updateCalendarAssignment(id, {...eventPayload, updated_by: currentUserId })
+          : await createCalendarAssignment({ ...eventPayload, created_by: currentUserId });
+
+      if (response.data.status === 200) {
+        this.$message.success("Assignment " + (this.isEditing ? "updated" : "created"));
       }
+
 
       // TODO: Update calendar once received success confirmation from backend, need to transform
       // assignmentForm into event object format later on
@@ -828,19 +798,17 @@ export default {
       this.showAssignmentForm = false;
 
       await this.fetchAllCalendarAssignment();
+
+      // Refresh info in detail window with newly saved data
       if (this.isEditing) {
-        // Update detail window data
-        this.selectedEvent = this.calendarAssignments.find(assignment => assignment.id === id);
-        this.selectedEvent.selectedFormIds = this.selectedEvent.formTreeNodeIds || [];
-        this.selectedEvent.selectedFormLabels = this.selectedEvent.selectedFormIds.map(id => this.formMap[id] || "(unknown label)");
-        this.isAssignmentRecurring = !!this.selectedEvent.daysOfWeek;
-        await this.fetchTeamDetails(this.selectedEvent.teamId);
+        const e = calendarApi.getEventById(eventPayload.id);
+        await this.handleEventClick({e});
 
         this.isEditing = false;
-        this.showAssignmentDetail = true;
       }
 
       this.resetAssignmentFormWithEmptyData();
+      console.log("submitted event payload:", eventPayload);
     },
     async handleDeleteAssignment() {
       const eventId = this.selectedEvent?.id;
@@ -888,6 +856,7 @@ export default {
 
       this.showAssignmentForm = false;
       this.isAssignmentRecurring = false;
+      console.log('assignment recurring false now')
     },
     handleTeamCellClick(row, column) {
       if (this.visibleTeams.has(row.id)) {
@@ -896,29 +865,35 @@ export default {
         this.visibleTeams.add(row.id);
       }
 
+      // const filteredEvents = this.calendarEvents.filter(event =>
+      //     this.visibleTeams.has(event.extendedProps.teamId)
+      // );
+      //
+      // const calendarApi = this.calendarApi;
+      // calendarApi.removeAllEvents();
+      // filteredEvents.forEach(event => calendarApi.addEvent(event));
+
       this.calendarOptions.events = this.calendarEvents.filter(event => this.visibleTeams.has(event.extendedProps.teamId));
     },
     handleRecurrenceCheckboxChange(val) {
       if (val) {
         this.assignmentForm.daysOfWeek = [0, 1, 2, 3, 4, 5, 6];
-        this.assignmentForm.startDate = null;
-        this.assignmentForm.endDate = null;
+        this.assignmentForm.start = null;
+        this.assignmentForm.end = null;
       }
     },
     handleEventDrop(info) {
       const event = info.event;
-      this.assignmentForm.startDate = event.start;
-      this.assignmentForm.endDate = event.end;
+      this.assignmentForm.start = event.start;
+      this.assignmentForm.end = event.end;
     },
     handleEventResize(info) {
       const event = info.event;
-      this.assignmentForm.endDate = event.end;
+      this.assignmentForm.end = event.end;
     },
-    handleEventMouseEnter(info) {},
-    handleEventMouseLeave(info) {},
     handleFormChanged(formObjArray){
-      this.assignmentForm.selectedFormIds = formObjArray.map(obj => obj.id);
-      this.assignmentForm.selectedFormLabels = formObjArray.map(obj => obj.label);
+      this.assignmentForm.extendedProps.formTreeNodeIds = formObjArray.map(obj => obj.id);
+      this.assignmentForm.extendedProps.formTreeNodeLabels = formObjArray.map(obj => obj.label);
     },
     translate,
     subTabTitle() {
@@ -934,7 +909,11 @@ export default {
     },
     searchOnVisibleTeamEvents() {
       const query = this.searchQuery.trim().toLowerCase();
+      const calendarApi = this.calendarApi;
 
+      if (!calendarApi) return;
+
+      // Filter and re-add matching events
       this.calendarOptions.events = this.calendarEvents.filter(event => {
         const matchesTeam = this.visibleTeams.has(event.extendedProps.teamId);
         const matchesQuery = query ? event.title.toLowerCase().includes(query) : true;
@@ -947,9 +926,6 @@ export default {
       // FullCalendar expects 'en' and 'zh-cn'
       if (lang.toLowerCase() === 'zh-cn') return 'zh-cn';
       return 'en'; // default fallback
-    },
-    getFormById(formId) {
-      return this.formMap[formId] || translate('orderManagement.orderFormDialog.unknownForm');
     },
     validateAndSave(){
       this.$refs.assignmentFormRef.validate(valid => {
@@ -970,12 +946,14 @@ export default {
     resetAssignmentFormWithEmptyData(){
       this.assignmentForm = {
         id: null,
-        title: '',
-        startDate: '',
-        endDate: '',
-        selectedFormIds: [],
-        selectedFormLabels: [],
-        teamId: null,
+        title: null,
+        start: null,
+        end: null,
+        extendedProps: {
+          formTreeNodeIds: [],
+          formTreeNodeLabels: [],
+          teamId: null,
+        },
         groupId: null,
         daysOfWeek: null,
         startRecur: null,
@@ -988,13 +966,25 @@ export default {
       const dayMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       return dayNumbers.map(num => dayMap[num]).join(', ');
     },
-    formatDateToYMD(date) {
+    formatDate(date, format = 'yyyy-MM-dd') {
       if (!date) return '';
+
       const d = new Date(date);
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      const hour = String(d.getHours()).padStart(2, '0');
+      const minute = String(d.getMinutes()).padStart(2, '0');
+
+      switch (format) {
+        case 'yyyy-MM-dd HH:mm':
+          return `${year}-${month}-${day} ${hour}:${minute}`;
+        case 'HH:mm':
+          return `${hour}:${minute}`;
+        case 'yyyy-MM-dd':
+        default:
+          return `${year}-${month}-${day}`;
+      }
     },
     createDisabledEndDate(startFieldName) {
       return (date) => {
@@ -1032,28 +1022,34 @@ export default {
     },
     async fetchAllCalendarAssignment() {
       try {
-        const response = await getAllCalendarAssignments();
-        if (response.data.status === "200") {
-          this.calendarAssignments = response.data.data.map(a => ({
-          ...a, title: a.name,
-          }));
-          this.calendarEvents = this.calendarAssignments.map(this.transformAssignmentToFCFormat);
-          this.calendarOptions.events = this.calendarEvents;
-        } else {
-          this.calendarAssignments = [];
-          this.calendarEvents = [];
-          this.calendarOptions.events = [];
+        this.isLoadingCalendar = true;
+        const res = await getAllCalendarAssignments();
+
+        if (res.data.status !== "200") {
+          throw new Error("Fetch failed");
         }
-      } catch (error) {
+
+        this.calendarAssignments = res.data.data;
+        this.calendarEvents = this.calendarAssignments.map(this.transformAssignmentToFCFormat);
+        this.calendarOptions.events = this.calendarEvents;
+
+        // this.$notify({
+        //   title: translate("orderManagement.messages.messageTitle"),
+        //   message: 'Calendar Refreshed',
+        //   type: "success",
+        // });
+      } catch (err) {
         this.$message.error("Error fetching calendar data.");
         this.calendarAssignments = [];
         this.calendarEvents = [];
         this.calendarOptions.events = [];
+      } finally {
+        this.isLoadingCalendar = false;
       }
     },
     transformAssignmentToFCFormat(assignment) {
       const {
-        id, title, startDate, endDate, groupId, allDay,
+        id, name, startDate, endDate, groupId, allDay,
         startDateRecur, endDateRecur, startTime, endTime,
         daysOfWeek, teamId,
         ...customProps
@@ -1061,10 +1057,10 @@ export default {
 
       const teamColor = this.getColorByTeamId(teamId);
 
-      // Build the base event object
+      // Build event format used by FullCalendar
       const eventObject = {
         id,
-        title,
+        title: name,
         start: startDate,
         end: endDate,
         groupId,
@@ -1080,6 +1076,7 @@ export default {
         borderColor: teamColor,
         extendedProps: {
           teamId,
+          formTreeNodeLabels: [],
           ...customProps
         }
       };
@@ -1151,6 +1148,72 @@ export default {
         console.error(`Failed to fetch team ${teamId} details`, e);
       }
     },
+    durationToDate(durationObj){
+      if (!durationObj || typeof durationObj.milliseconds !== 'number') return null;
+
+      const ms = durationObj.milliseconds;
+      const date = new Date(); // Use today’s date
+      date.setHours(0, 0, 0, 0); // Reset to midnight
+      return new Date(date.getTime() + ms);
+    },
+    revertLastSelectedEvent(currentEventId = null) {
+      // if (!this.lastSelectedEventId) return;
+      //
+      // // Avoid reverting the current event (used in eventClick)
+      // if (currentEventId && this.lastSelectedEventId === currentEventId) return;
+      //
+      // const calendarApi = this.calendarApi;
+      // const lastEvent = calendarApi.getEventById(this.lastSelectedEventId);
+      // if (!lastEvent) return;
+      //
+      // const teamId = lastEvent.extendedProps?.teamId;
+      // const color = this.getColorByTeamId(teamId);
+      //
+      // lastEvent.setProp('backgroundColor', color);
+      // lastEvent.setProp('borderColor', color);
+      // lastEvent.setProp('startEditable', false);
+      // lastEvent.setProp('durationEditable', false);
+      //
+      // // Only reset if this is not called during an event click on the same event
+      // if (!currentEventId) {
+      //   this.lastSelectedEventId = null;
+      // }
+
+      if (!this.lastSelectedEventId) return;
+
+      // Avoid reverting if re-clicking the same event
+      if (currentEventId && this.lastSelectedEventId === currentEventId) return;
+
+      const calendarApi = this.calendarApi;
+      const allEvents = calendarApi.getEvents();
+
+      // Get current last event
+      const baseEvent = allEvents.find(e => e.id === this.lastSelectedEventId);
+      if (!baseEvent) return;
+
+      const groupId = baseEvent.groupId;
+      const teamId = baseEvent.extendedProps?.teamId;
+      const color = this.getColorByTeamId(teamId);
+
+      // Revert either all with matching groupId (recurring) or just the one
+      const eventsToReset = groupId
+          ? allEvents.filter(e => e.groupId === groupId)
+          : [baseEvent];
+
+      eventsToReset.forEach(event => {
+        event.setProp('backgroundColor', color);
+        event.setProp('borderColor', color);
+        event.setProp('startEditable', false);
+        event.setProp('durationEditable', false);
+      });
+
+      // Reset state unless this was called from the same event
+      if (!currentEventId) {
+        this.lastSelectedEventId = null;
+      }
+
+
+    }
   },
   mounted() {
     this.loadCalender();
@@ -1181,7 +1244,7 @@ export default {
   border-radius: 12px;             /* rounded corners */
   padding: 10px;                   /* internal spacing */
   background-color: #fff;          /* optional: clean background */
-  width: 300px;
+  width: 350px;
   max-height: 96vh;
 }
 
