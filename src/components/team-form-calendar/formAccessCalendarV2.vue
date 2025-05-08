@@ -1,6 +1,6 @@
 <template>
   <el-container>
-    <!-- Team List -->
+    <!-- Team List Panel -->
     <el-aside ref="teamPanel" class="aside-panel-left">
       <el-table
           :data="teamsOptions"
@@ -22,30 +22,36 @@
             />
           </template>
         </el-table-column>
-        <el-table-column prop="label" label="Teams" sortable show-overflow-tooltip/>
+        <el-table-column prop="label" :label="translate('common.team')" sortable show-overflow-tooltip/>
       </el-table>
     </el-aside>
+    <!-- Middle Panel -->
     <el-container>
       <el-header height="40px">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-
+          <!--  Left side -->
           <div style="display: flex; align-items: center;">
-          <el-input
+            <!-- Search box -->
+            <el-input
               v-model="searchQuery"
               :placeholder="translate('userManagement.searchPlaceholder')"
               clearable
               size="large"
               style="width: 300px;"
-          >
+            >
             <template #prefix>
               <el-icon>
                 <Search />
               </el-icon>
             </template>
           </el-input>
-        </div>
+          </div>
 
+          <!--  Right side -->
           <div style="display: flex; align-items: center;">
+            <!-- Test only, delete later on -->
+<!--            <el-button @click="showTestView = !showTestView">showTestView </el-button>-->
+
             <!-- Tour Button -->
 <!--            <el-tooltip :content="'Tour'" placement="top">-->
 <!--              <el-button-->
@@ -58,14 +64,25 @@
 <!--              </el-button>-->
 <!--            </el-tooltip>-->
 
+            <!-- Tooltip Icon -->
+            <el-tooltip :content="translate('formAccessCalendar.tutorialContent')" placement="top">
+              <el-icon
+                  size="45"
+                  :color="'#b3b3b3'"
+                  style="background-color: #FFFFFF; margin-right:5px; "
+              >
+                <QuestionFilled />
+              </el-icon>
+            </el-tooltip>
+
             <!-- Refresh Button -->
-            <el-tooltip :content="'Refresh Calendar'" placement="top">
+            <el-tooltip :content="translate('formAccessCalendar.refreshDescription')" placement="top">
               <el-button
                   class="refresh-button"
                   size="large"
                   type="primary"
                   circle
-                  @click="fetchAllCalendarAssignment"
+                  @click="handleRefresh"
               >
                 <el-icon style="color: #004085;"><RefreshRight /></el-icon>
               </el-button>
@@ -74,12 +91,13 @@
         </div>
       </el-header>
       <el-main>
-        <!-- Calendar -->
+        <!-- Form assignment calendar -->
         <FullCalendar ref="calendar" :options="calendarOptions"/>
       </el-main>
     </el-container>
+    <!-- Operation Panel -->
     <el-aside class="aside-panel-right">
-      <!-- Aside Header -->
+      <!-- Header -->
       <div
           style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"
       >
@@ -92,23 +110,23 @@
         <div
             v-if="selectedEvent?.id && !showAssignmentForm"
         >
-          <el-button type="primary" @click="handleEditClick" style="margin: 0 5px 0 0;">Edit</el-button>
-          <el-button type="danger" @click="handleDeleteAssignment" style="margin: 0;">Delete</el-button>
+          <el-button v-if="isManager" type="primary" @click="handleEditClick" style="margin: 0 5px 0 0;">{{ translate('common.editDialog.title') }}</el-button>
+          <el-button v-if="isManager" type="danger" @click="handleDeleteAssignment" style="margin: 0;">{{ translate('common.delete') }}</el-button>
         </div>
       </div>
 
-      <!-- Access Assignment Form -->
+      <!-- Assignment Form -->
       <el-form
           ref="assignmentFormRef"
           v-if="showAssignmentForm"
           :model="assignmentForm"
           :rules="formRules"
       >
-        <el-form-item prop="title" :label="'Name'" required>
+        <el-form-item prop="title" :label="translate('formAccessCalendar.assignmentName')" required>
           <el-input v-model="assignmentForm.title" />
         </el-form-item>
 
-        <el-form-item prop="extendedProps.teamId" :label="'Team'" required>
+        <el-form-item prop="extendedProps.teamId" :label="translate('common.team')" required>
           <el-select
               v-model="assignmentForm.extendedProps.teamId"
               filterable
@@ -136,7 +154,7 @@
 
         <el-row>
           <el-col :span="12">
-            <el-form-item label="Recurring" style="margin-left: 10px;">
+            <el-form-item :label="translate('formAccessCalendar.recurring')" style="margin-left: 10px;">
               <el-checkbox
                   v-model="isAssignmentRecurring"
                   @change="handleRecurrenceCheckboxChange"
@@ -144,7 +162,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="All Day" style="margin-left: 10px;">
+            <el-form-item :label="translate('formAccessCalendar.allDay')" style="margin-left: 10px;">
               <el-checkbox
                   v-model="assignmentForm.allDay"
               />
@@ -152,19 +170,19 @@
           </el-col>
         </el-row>
 
-        <el-form-item v-if="!isAssignmentRecurring" prop="start" :label="'Start Date'" required>
+        <el-form-item v-if="!isAssignmentRecurring" prop="start" :label="translate('formAccessCalendar.startDate')" required>
           <el-date-picker
               v-model="assignmentForm.start"
               :type="assignmentForm.allDay ? 'date' : 'datetime'"
-              placeholder="Select start date"
+              :placeholder="translate('formAccessCalendar.selectDatePlaceholder')"
           />
         </el-form-item>
 
-        <el-form-item v-if="!isAssignmentRecurring" prop="end" :label="'End Date'" required>
+        <el-form-item v-if="!isAssignmentRecurring" prop="end" :label="translate('formAccessCalendar.endDate')" required>
           <el-date-picker
               v-model="assignmentForm.end"
               :type="assignmentForm.allDay ? 'date' : 'datetime'"
-              placeholder="Select end date"
+              :placeholder="translate('formAccessCalendar.selectDatePlaceholder')"
               :disabled-date="createDisabledEndDate('start')"
           />
         </el-form-item>
@@ -175,51 +193,52 @@
             prop="daysOfWeek"
             style="margin-left: 10px;"
         >
-          <el-form-item prop="startRecur" :label="'Recurrence Start Date'" label-position="top">
+          <el-form-item prop="startRecur" :label="translate('formAccessCalendar.startDateRecur')" label-position="top">
             <el-date-picker
                 v-model="assignmentForm.startRecur"
                 type="date"
-                placeholder="Select start date"
+                :placeholder="translate('formAccessCalendar.selectDatePlaceholder')"
             />
           </el-form-item>
 
-          <el-form-item prop="endRecur" :label="'Recurrence End Date'" label-position="top">
+          <el-form-item prop="endRecur" :label="translate('formAccessCalendar.endDateRecur')" label-position="top">
             <el-date-picker
                 v-model="assignmentForm.endRecur"
                 type="date"
-                placeholder="Select end date"
+                :placeholder="translate('formAccessCalendar.selectDatePlaceholder')"
                 :disabled-date="createDisabledEndDate('startRecur')"
             />
           </el-form-item>
 
-          <el-form-item v-if="!assignmentForm.allDay" label ="Start Time" label-position="top">
-            <el-time-picker v-model="assignmentForm.startTime" placeholder="Select start time"/>
+          <el-form-item v-if="!assignmentForm.allDay" :label="translate('formAccessCalendar.dailyStartTime')" label-position="top">
+            <el-time-picker v-model="assignmentForm.startTime" :placeholder="translate('formAccessCalendar.selectTimePlaceholder')"/>
           </el-form-item>
 
-          <el-form-item v-if="!assignmentForm.allDay" label ="End Time" label-position="top">
-            <el-time-picker v-model="assignmentForm.endTime" placeholder="Select end time"/>
+          <el-form-item v-if="!assignmentForm.allDay" :label="translate('formAccessCalendar.dailyEndTime')" label-position="top">
+            <el-time-picker v-model="assignmentForm.endTime" :placeholder="translate('formAccessCalendar.selectTimePlaceholder')"/>
           </el-form-item>
 
-          <el-form-item prop="daysCheckBoxes" :label="'Repeat On'" label-position="top">
+          <el-form-item prop="daysCheckBoxes" :label="translate('formAccessCalendar.repeatOn')" label-position="top">
             <el-checkbox-group
                 v-model="assignmentForm.daysOfWeek"
             >
-              <el-checkbox :label="'Monday'" :value="1"/>
-              <el-checkbox :label="'Tuesday'" :value="2"/>
-              <el-checkbox :label="'Wednesday'" :value="3"/>
-              <el-checkbox :label="'Thursday'" :value="4"/>
-              <el-checkbox :label="'Friday'" :value="5"/>
-              <el-checkbox :label="'Saturday'" :value="6"/>
-              <el-checkbox :label="'Sunday'" :value="0"/>
+              <el-checkbox :label="translate('formAccessCalendar.monday')" :value="1"/>
+              <el-checkbox :label="translate('formAccessCalendar.tuesday')" :value="2"/>
+              <el-checkbox :label="translate('formAccessCalendar.wednesday')" :value="3"/>
+              <el-checkbox :label="translate('formAccessCalendar.thursday')" :value="4"/>
+              <el-checkbox :label="translate('formAccessCalendar.friday')" :value="5"/>
+              <el-checkbox :label="translate('formAccessCalendar.saturday')" :value="6"/>
+              <el-checkbox :label="translate('formAccessCalendar.sunday')" :value="0"/>
             </el-checkbox-group>
           </el-form-item>
         </el-form-item>
 
-        <el-form-item prop="extendedProps.formTreeNodeIds" :label="'Accessible Form'" required label-position="top">
+        <el-form-item prop="extendedProps.formTreeNodeIds" :label="translate('formAccessCalendar.accessibleForm')" required label-position="top">
           <TeamFormTree
               :show-only-selected-node="false"
               :selected-form-ids="assignmentForm.extendedProps.formTreeNodeIds"
               :expand-all-nodes="false"
+              @on-node-clicked="handleFormNodeClicked"
               @update-selected-forms="handleFormChanged"
           />
         </el-form-item>
@@ -227,12 +246,11 @@
 
       <!-- Save/Cancel buttons for form -->
       <div v-if="showAssignmentForm">
-
-        <el-button type="primary" @click="validateAndSave">Save</el-button>
-        <el-button @click="handleCancel">Cancel</el-button>
+        <el-button type="primary" @click="validateAndSave">{{ translate('common.confirm') }}</el-button>
+        <el-button @click="handleCancel">{{ translate('common.cancel') }}</el-button>
       </div>
 
-      <!-- Assignment Detail View -->
+      <!-- Assignment Detail -->
       <el-descriptions
           v-if="showAssignmentDetail"
           :column="1"
@@ -240,14 +258,14 @@
           style="margin-top: 20px"
           :width="250"
       >
-        <el-descriptions-item label="ID">
+        <el-descriptions-item :label="translate('common.table.id')">
           {{ selectedEvent?.id }}
         </el-descriptions-item>
-        <el-descriptions-item label="Name">
+        <el-descriptions-item :label="translate('formAccessCalendar.assignmentName')">
           {{ selectedEvent.title }}
         </el-descriptions-item>
 
-        <el-descriptions-item label="Team">
+        <el-descriptions-item :label="translate('common.team')">
           <el-tag size="small" round style="margin-right: 5px;">
             <el-popover
                 trigger="hover"
@@ -256,12 +274,12 @@
             >
               <template #default>
                 <div v-if="teamDetails[selectedEvent.extendedProps.teamId]">
-                  <p><b>ID:</b> {{ teamDetails[selectedEvent.extendedProps.teamId].id }}</p>
-                  <p><b>Type:</b> {{ teamDetails[selectedEvent.extendedProps.teamId].type || '-' }}</p>
-                  <p><b>Leader:</b> {{ teamDetails[selectedEvent.extendedProps.teamId].leader || '-' }}</p>
-                  <p><b>Description:</b> {{ teamDetails[selectedEvent.extendedProps.teamId].description || '-' }}</p>
+                  <p><b>{{ translate('common.table.id') }}:</b> {{ teamDetails[selectedEvent.extendedProps.teamId].id }}</p>
+                  <p><b>{{ translate('teamManagement.table.type') }}:</b> {{ teamDetails[selectedEvent.extendedProps.teamId].type || '-' }}</p>
+                  <p><b>{{ translate('teamManagement.table.leader') }}:</b> {{ teamDetails[selectedEvent.extendedProps.teamId].leader || '-' }}</p>
+                  <p><b>{{ translate('teamManagement.table.description') }}:</b> {{ teamDetails[selectedEvent.extendedProps.teamId].description || '-' }}</p>
                   <template v-if="teamDetails[selectedEvent.extendedProps.teamId].members?.length > 0">
-                    <p><b>Members:</b></p>
+                    <p><b>{{ translate('teamManagement.editDialog.members') }}:</b></p>
                     <ul style="padding-left: 20px;">
                       <li v-for="member in teamDetails[selectedEvent.extendedProps.teamId].members" :key="member.id">
                         {{ member.name }} ({{ member.role.name }})
@@ -269,7 +287,7 @@
                     </ul>
                   </template>
                 </div>
-                <div v-else>Loading...</div>
+                <div v-else>-</div>
               </template>
               <template #reference>
                 {{ getTeamNameById(selectedEvent.extendedProps.teamId) }}
@@ -278,26 +296,26 @@
           </el-tag>
         </el-descriptions-item>
 
-        <el-descriptions-item v-if="selectedEvent.start" label="Start Date">
+        <el-descriptions-item v-if="selectedEvent.start" :label="translate('formAccessCalendar.startDate')">
           {{ formatDate(selectedEvent.start, 'yyyy-MM-dd HH:mm') || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item v-if="selectedEvent.end" label="End Date">
+        <el-descriptions-item v-if="selectedEvent.end" :label="translate('formAccessCalendar.endDate')">
           {{ formatDate(selectedEvent.end, 'yyyy-MM-dd HH:mm') || '-' }}
         </el-descriptions-item>
 
-        <el-descriptions-item v-if="selectedEvent.groupId" label="Group ID">
+        <el-descriptions-item v-if="selectedEvent.groupId" :label="translate('formAccessCalendar.groupId')">
           {{ selectedEvent?.groupId }}
         </el-descriptions-item>
 
-        <el-descriptions-item label="Recurrence Start Date" v-if="isAssignmentRecurring">
+        <el-descriptions-item :label="translate('formAccessCalendar.startDateRecur')" v-if="isAssignmentRecurring">
           {{ selectedEvent.startRecur ? formatDate(selectedEvent.startRecur, 'yyyy-MM-dd') : 'Unlimited' }}
         </el-descriptions-item>
 
-        <el-descriptions-item label="Recurrence End Date" v-if="isAssignmentRecurring">
+        <el-descriptions-item :label="translate('formAccessCalendar.endDateRecur')" v-if="isAssignmentRecurring">
           {{ selectedEvent.endRecur ? formatDate(selectedEvent.endRecur, 'yyyy-MM-dd') : 'Unlimited' }}
         </el-descriptions-item>
 
-        <el-descriptions-item label="Repeated On" v-if="isAssignmentRecurring">
+        <el-descriptions-item :label="translate('formAccessCalendar.repeatOn')" v-if="isAssignmentRecurring">
           {{
             selectedEvent.daysOfWeek?.length
                 ? mapDaysOfWeek(selectedEvent.daysOfWeek)
@@ -305,24 +323,30 @@
           }}
         </el-descriptions-item>
 
-        <el-descriptions-item label="Daily Start Time" v-if="isAssignmentRecurring && !selectedEvent.allDay">
+        <el-descriptions-item :label="translate('formAccessCalendar.dailyStartTime')" v-if="isAssignmentRecurring && !selectedEvent.allDay">
           {{ selectedEvent.startTime ? formatDate(selectedEvent.startTime, 'HH:mm') : '-' }}
         </el-descriptions-item>
 
-        <el-descriptions-item label="Daily End Time" v-if="isAssignmentRecurring && !selectedEvent.allDay">
+        <el-descriptions-item :label="translate('formAccessCalendar.dailyEndTime')" v-if="isAssignmentRecurring && !selectedEvent.allDay">
           {{ selectedEvent.endTime ? formatDate(selectedEvent.endTime, 'HH:mm') : '-' }}
         </el-descriptions-item>
 
-        <el-descriptions-item label="Accessible Forms">
+        <el-descriptions-item :label="translate('formAccessCalendar.accessibleForm')">
           <TeamFormTree
               :show-only-selected-node="true"
               :selected-form-ids="selectedEvent.extendedProps.formTreeNodeIds"
               :expand-all-nodes="true"
+              @on-node-clicked="handleFormNodeClicked"
           />
         </el-descriptions-item>
       </el-descriptions>
     </el-aside>
   </el-container>
+
+  <!-- test only -->
+  <el-drawer v-model="showTestView">
+    <test-view-team-form/>
+  </el-drawer>
 
   <!-- Tour Content -->
   <el-tour v-model="tourEnabled">
@@ -409,24 +433,29 @@ import listPlugin from '@fullcalendar/list'
 import multiMonthPlugin from '@fullcalendar/multimonth'
 import interactionPlugin from '@fullcalendar/interaction'
 import allLocales from '@fullcalendar/core/locales-all.js';
-import TeamFormTree from "@/components/dispatch/TeamFormTree.vue";
-import {translate} from "@/utils/i18n";
 import {Check, QuestionFilled, RefreshRight, Search} from "@element-plus/icons-vue";
+import {translate} from "@/utils/i18n";
+import {generateFormMap, getCurrentLanguage, openFormPreviewWindow} from '@/utils/dispatch-utils';
 import {getAllTeams} from "@/services/teamService";
-import {generateFormMap, getCurrentLanguage} from '@/utils/dispatch-utils';
-import {
-  createCalendarAssignment, deleteCalendarAssignment,
-  getAllCalendarAssignments,
-  updateCalendarAssignment
-} from "@/services/calendarAssignmentService";
-import {fetchFormNodes} from "@/services/formNodeService";
 import {getUsersForTeam} from "@/services/teamUserService";
-
+import {createCalendarAssignment, deleteCalendarAssignment, getAllCalendarAssignments, updateCalendarAssignment} from "@/services/calendarAssignmentService";
+import {fetchFormNodes} from "@/services/formNodeService";
+import TeamFormTree from "@/components/dispatch/TeamFormTree.vue";
+import TestViewTeamForm from "@/components/team-form-calendar/testViewTeamForm.vue";
 
 export default {
   watch:{
     searchQuery() {
       this.searchOnVisibleTeamEvents();
+    },
+    calendarLocale(newLocale) {
+      if (newLocale.toLowerCase() === 'en-us') {
+        console.log('switched to en locale')
+        this.calendarApi.setOption('locale', 'en');
+      } else {
+        console.log('switched to zh locale')
+        this.calendarApi.setOption('locale', 'zh');
+      }
     }
   },
   computed: {
@@ -462,6 +491,7 @@ export default {
     },
   },
   components: {
+    TestViewTeamForm,
     QuestionFilled,
     TeamFormTree,
     FullCalendar,
@@ -470,8 +500,17 @@ export default {
     RefreshRight,
   },
   data(){
+    const user = this.$store.getters.getUser;
     return {
-      isLoadingCalendar: false, // currently not in use, seems to be very distracting
+      calendarLocale: getCurrentLanguage(),
+      user,
+      userId: user.id,
+      userRoleId: user.role?.id ?? 0,
+      isManager: user.role?.id === 1 || user.role?.id === 4,
+      // TODO: delete after testing
+      showTestView: false,
+      // currently not in use, seems to be very distracting
+      isLoadingCalendar: false,
       searchQuery: '',
       tourEnabled: false,
       teamDetails: {},
@@ -483,6 +522,7 @@ export default {
       selectedEvent: null,
       lastSelectedEventId: null,
       isAssignmentRecurring: false,
+      // Assignment form object in full calendar event's format.
       assignmentForm: {
         id: null,
         title: null,
@@ -543,11 +583,11 @@ export default {
           right: 'multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay,listWeek',
         },
         views: {
-          dayGridMonth: { buttonText: 'Month' },
-          timeGridWeek: { buttonText: 'Week' },
-          timeGridDay: { buttonText: 'Day' },
-          listWeek: { buttonText: 'List' },
-          multiMonthYear: { buttonText: 'Year' },
+          dayGridMonth: { buttonText: translate('formAccessCalendar.month') },
+          timeGridWeek: { buttonText: translate('formAccessCalendar.week') },
+          timeGridDay: { buttonText: translate('formAccessCalendar.day') },
+          listWeek: { buttonText: translate('formAccessCalendar.list') },
+          multiMonthYear: { buttonText: translate('formAccessCalendar.year') },
         },
         dateClick: this.handleDateClick,
         eventClick: this.handleEventClick,
@@ -595,6 +635,10 @@ export default {
       this.selectedEvent = null;
       this.showAssignmentDetail = false;
 
+      if (!this.isManager) {
+        return;
+      }
+
       // Prefill for date and isAllDay
       this.resetAssignmentFormWithEmptyData();
       this.assignmentForm.start = arg.date;
@@ -605,7 +649,7 @@ export default {
     },
     async handleEventClick(info) {
       // TODO: temporarily use cancel to revert changes in case edit is not confirm
-      // this.handleCancel();
+      this.handleCancel();
 
       this.revertLastSelectedEvent(info.event.id)
 
@@ -670,7 +714,6 @@ export default {
       // Show detail window
       this.showAssignmentDetail = true;
       this.showAssignmentForm = false;
-      console.log('handleEventClick: ', this.selectedEvent);
     },
     handleEditClick() {
       // Set the selected event draggable/resizable
@@ -687,14 +730,7 @@ export default {
           start: event.start,
           end: event.end
         };
-
-        console.log('Change selected event to be drag and resizable, cached original data');
       }
-
-      // Prepare form with selected event
-      // this.assignmentForm = {
-      //   ...this.selectedEvent
-      // };
 
       this.assignmentForm = JSON.parse(JSON.stringify(this.selectedEvent));
 
@@ -702,11 +738,8 @@ export default {
       this.showAssignmentDetail = false;
       this.isEditing = true;
       this.showAssignmentForm = true;
-
-      console.log("prefilled assignment form:", this.assignmentForm);
     },
     async handleSubmitClick() {
-      // TODO: this expects FC event format
       // Destruct assignment form data
       const {
         id,
@@ -747,19 +780,15 @@ export default {
             teamId: extendedProps.teamId,
           }).filter(([_, value]) => value !== null && value !== undefined && value !== "undefined" && value !== ""));
 
-      const currentUserId = this.$store.getters.getUser.id;
-
       const response = this.isEditing
-          ? await updateCalendarAssignment(id, {...eventPayload, updated_by: currentUserId })
-          : await createCalendarAssignment({ ...eventPayload, created_by: currentUserId });
+          ? await updateCalendarAssignment(id, {...eventPayload, updated_by: this.userId })
+          : await createCalendarAssignment({ ...eventPayload, created_by: this.userId });
 
       if (response.data.status === 200) {
         this.$message.success("Assignment " + (this.isEditing ? "updated" : "created"));
       }
 
-
-      // TODO: Update calendar once received success confirmation from backend, need to transform
-      // assignmentForm into event object format later on
+      // Update event in the calendar
       const calendarApi = this.calendarApi;
 
       if (this.isEditing && id) {
@@ -778,8 +807,6 @@ export default {
           existingEvent.setProp('durationEditable', false);
           existingEvent.setProp('backgroundColor', this.getColorByTeamId(eventPayload.teamId));
           existingEvent.setProp('borderColor', this.getColorByTeamId(eventPayload.teamId));
-
-          console.log('updating event in FC');
         }
       } else {
         calendarApi.addEvent({
@@ -789,8 +816,6 @@ export default {
           backgroundColor: this.getColorByTeamId(eventPayload.teamId),
           borderColor: this.getColorByTeamId(eventPayload.teamId),
         });
-
-        console.log('adding event in FC');
       }
 
       // Hide Assignment Form Window
@@ -808,14 +833,12 @@ export default {
       }
 
       this.resetAssignmentFormWithEmptyData();
-      console.log("submitted event payload:", eventPayload);
     },
     async handleDeleteAssignment() {
       const eventId = this.selectedEvent?.id;
-      const currentUserId = this.$store.getters.getUser.id;
 
       if (!eventId) return;
-      const response = await deleteCalendarAssignment(eventId, currentUserId);
+      const response = await deleteCalendarAssignment(eventId, this.userId);
 
       if (response.data.status === '200') {
         // Remove from FullCalendar
@@ -856,22 +879,17 @@ export default {
 
       this.showAssignmentForm = false;
       this.isAssignmentRecurring = false;
-      console.log('assignment recurring false now')
     },
     handleTeamCellClick(row, column) {
+      if (!this.isManager){
+        return;
+      }
+
       if (this.visibleTeams.has(row.id)) {
         this.visibleTeams.delete(row.id);
       } else {
         this.visibleTeams.add(row.id);
       }
-
-      // const filteredEvents = this.calendarEvents.filter(event =>
-      //     this.visibleTeams.has(event.extendedProps.teamId)
-      // );
-      //
-      // const calendarApi = this.calendarApi;
-      // calendarApi.removeAllEvents();
-      // filteredEvents.forEach(event => calendarApi.addEvent(event));
 
       this.calendarOptions.events = this.calendarEvents.filter(event => this.visibleTeams.has(event.extendedProps.teamId));
     },
@@ -895,17 +913,21 @@ export default {
       this.assignmentForm.extendedProps.formTreeNodeIds = formObjArray.map(obj => obj.id);
       this.assignmentForm.extendedProps.formTreeNodeLabels = formObjArray.map(obj => obj.label);
     },
+    handleRefresh(){
+      this.fetchAllCalendarAssignment();
+      this.calendarApi.render();
+    },
     translate,
     subTabTitle() {
       if (this.isEditing) {
-        return 'Edit Assignment';
+        return translate('formAccessCalendar.editAssignment');
       }
 
       if (this.selectedEvent?.id) {
-        return 'Assignment Detail';
+        return translate('formAccessCalendar.assignmentDetail');
       }
 
-      return 'New Assignment';
+      return translate('formAccessCalendar.newAssignment');
     },
     searchOnVisibleTeamEvents() {
       const query = this.searchQuery.trim().toLowerCase();
@@ -922,6 +944,7 @@ export default {
     },
     getCalendarLocale(){
       const lang = getCurrentLanguage();
+      console.log('getCalendarLocale call: current language is:', lang);
 
       // FullCalendar expects 'en' and 'zh-cn'
       if (lang.toLowerCase() === 'zh-cn') return 'zh-cn';
@@ -1002,11 +1025,15 @@ export default {
         const response = await getAllTeams();
         if (response.data.status === "200") {
           // Adding value, label field to be used as dropdown additionally
-          this.teamsOptions = response.data.data.map(team => ({
+          const allTeams = response.data.data.map(team => ({
             ...team,
             value: team.leader?.name || "-",
             label: team.name,
           }));
+
+          this.teamsOptions = this.isManager
+              ? allTeams
+              : allTeams.filter(team => team.leader?.id === this.userId);
 
           // Initialize event visibility to show all teams events
           this.visibleTeams = new Set(this.teamsOptions.map(team => team.id));
@@ -1029,15 +1056,17 @@ export default {
           throw new Error("Fetch failed");
         }
 
-        this.calendarAssignments = res.data.data;
-        this.calendarEvents = this.calendarAssignments.map(this.transformAssignmentToFCFormat);
-        this.calendarOptions.events = this.calendarEvents;
+        const allAssignments = res.data.data;
+        const allowedTeamIds = this.getUserTeamIds();
 
-        // this.$notify({
-        //   title: translate("orderManagement.messages.messageTitle"),
-        //   message: 'Calendar Refreshed',
-        //   type: "success",
-        // });
+        // Filter assignments if user is not manager
+        const filteredAssignments = allAssignments.filter(
+            a => allowedTeamIds.includes(a.teamId)
+        );
+
+        this.calendarAssignments = filteredAssignments;
+        this.calendarEvents = filteredAssignments.map(this.transformAssignmentToFCFormat);
+        this.calendarOptions.events = this.calendarEvents;
       } catch (err) {
         this.$message.error("Error fetching calendar data.");
         this.calendarAssignments = [];
@@ -1211,9 +1240,21 @@ export default {
       if (!currentEventId) {
         this.lastSelectedEventId = null;
       }
-
-
-    }
+    },
+    getUserTeamIds() {
+      if (this.isManager) {
+        // Manager sees all teams
+        return this.teamsOptions.map(team => team.id);
+      }
+      // Regular user → filter teams they lead
+      return this.teamsOptions
+          .filter(team => team.leader?.id === this.userId)
+          .map(team => team.id);
+    },
+    async handleFormNodeClicked(formTemplateId) {
+      console.log('handling on node click');
+      await openFormPreviewWindow(formTemplateId, this)
+    },
   },
   mounted() {
     this.loadCalender();
