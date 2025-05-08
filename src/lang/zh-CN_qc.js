@@ -413,7 +413,7 @@ export default {
         friday: '周五',
         saturday: '周六',
         sunday: '周日',
-        accessibleForm: '访问表单',
+        accessibleForm: '可用表单',
         groupId: '循环编号',
         year: '年',
         month: '月',

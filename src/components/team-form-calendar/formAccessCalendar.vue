@@ -1,5 +1,5 @@
 <template>
-  <el-container>
+  <el-container class="root-container">
     <!-- Team List Panel -->
     <el-aside ref="teamPanel" class="aside-panel-left">
       <el-table
@@ -25,86 +25,83 @@
         <el-table-column prop="label" :label="translate('common.team')" sortable show-overflow-tooltip/>
       </el-table>
     </el-aside>
+
     <!-- Middle Panel -->
-    <el-container>
-      <el-header height="40px">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+    <el-container direction="vertical" class="middle-panel">
           <!--  Left side -->
-          <div style="display: flex; align-items: center;">
-            <!-- Search box -->
-            <el-input
-              v-model="searchQuery"
-              :placeholder="translate('userManagement.searchPlaceholder')"
-              clearable
-              size="large"
-              style="width: 300px;"
-            >
-            <template #prefix>
-              <el-icon>
-                <Search />
-              </el-icon>
-            </template>
-          </el-input>
-          </div>
-
-          <!--  Right side -->
-          <div style="display: flex; align-items: center;">
-            <!-- Test only, delete later on -->
-<!--            <el-button @click="showTestView = !showTestView">showTestView </el-button>-->
-
-            <!-- Tour Button -->
-<!--            <el-tooltip :content="'Tour'" placement="top">-->
-<!--              <el-button-->
-<!--                  :icon="QuestionFilled"-->
-<!--                  size="large"-->
-<!--                  style="margin: 0px;"-->
-<!--                  circle-->
-<!--                  @click="tourEnabled = true"-->
-<!--              >-->
-<!--              </el-button>-->
-<!--            </el-tooltip>-->
-
-            <!-- Tooltip Icon -->
-            <el-tooltip :content="translate('formAccessCalendar.tutorialContent')" placement="top">
-              <el-icon
-                  size="45"
-                  :color="'#b3b3b3'"
-                  style="background-color: #FFFFFF; margin-right:5px; "
-              >
-                <QuestionFilled />
-              </el-icon>
-            </el-tooltip>
-
-            <!-- Refresh Button -->
-            <el-tooltip :content="translate('formAccessCalendar.refreshDescription')" placement="top">
-              <el-button
-                  class="refresh-button"
+          <el-container class="middle-panel-header">
+            <div class="middle-header-left">
+              <!-- Search box -->
+              <el-input
+                  v-model="searchQuery"
+                  :placeholder="translate('userManagement.searchPlaceholder')"
+                  clearable
                   size="large"
-                  type="primary"
-                  circle
-                  @click="handleRefresh"
+                  style="width: 300px;"
               >
-                <el-icon style="color: #004085;"><RefreshRight /></el-icon>
-              </el-button>
-            </el-tooltip>
-          </div>
-        </div>
-      </el-header>
-      <el-main>
+                <template #prefix>
+                  <el-icon>
+                    <Search />
+                  </el-icon>
+                </template>
+              </el-input>
+            </div>
+
+            <!--  Right side -->
+            <div class="middle-header-right">
+              <!-- Test only, delete later on -->
+              <!--            <el-button @click="showTestView = !showTestView">showTestView </el-button>-->
+
+              <!-- Tour Button -->
+              <!--            <el-tooltip :content="'Tour'" placement="top">-->
+              <!--              <el-button-->
+              <!--                  :icon="QuestionFilled"-->
+              <!--                  size="large"-->
+              <!--                  style="margin: 0px;"-->
+              <!--                  circle-->
+              <!--                  @click="tourEnabled = true"-->
+              <!--              >-->
+              <!--              </el-button>-->
+              <!--            </el-tooltip>-->
+
+              <!-- Tooltip Icon -->
+              <el-tooltip :content="translate('formAccessCalendar.tutorialContent')" placement="top">
+                <el-icon
+                    size="45"
+                    :color="'#b3b3b3'"
+                    style="background-color: #FFFFFF; margin-right:5px; "
+                >
+                  <QuestionFilled />
+                </el-icon>
+              </el-tooltip>
+
+              <!-- Refresh Button -->
+              <el-tooltip :content="translate('formAccessCalendar.refreshDescription')" placement="top">
+                <el-button
+                    class="refresh-button"
+                    size="large"
+                    type="primary"
+                    circle
+                    @click="handleRefresh"
+                >
+                  <el-icon style="color: #004085;"><RefreshRight /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </div>
+          </el-container>
+
         <!-- Form assignment calendar -->
-        <FullCalendar ref="calendar" :options="calendarOptions"/>
-      </el-main>
+      <FullCalendar ref="calendar" :options="calendarOptions"/>
     </el-container>
+
     <!-- Operation Panel -->
     <el-aside class="aside-panel-right">
       <!-- Header -->
-      <div
-          style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"
-      >
+      <div class="aside-right-header">
         <!-- Left: Title -->
-        <p v-if="isEditing || showAssignmentForm || selectedEvent?.id" style="margin: 0;">
+        <div v-if="isEditing || showAssignmentForm || selectedEvent?.id">
           <b>{{ subTabTitle() }}</b>
-        </p>
+        </div>
 
         <!-- Right: Edit/Delete Buttons -->
         <div
@@ -115,10 +112,10 @@
         </div>
       </div>
 
-      <!-- Assignment Form -->
+      <!-- Scrollable Form Container -->
+      <div v-if="showAssignmentForm" class="aside-form-scroll">
       <el-form
           ref="assignmentFormRef"
-          v-if="showAssignmentForm"
           :model="assignmentForm"
           :rules="formRules"
       >
@@ -221,6 +218,7 @@
           <el-form-item prop="daysCheckBoxes" :label="translate('formAccessCalendar.repeatOn')" label-position="top">
             <el-checkbox-group
                 v-model="assignmentForm.daysOfWeek"
+                style="margin: 0"
             >
               <el-checkbox :label="translate('formAccessCalendar.monday')" :value="1"/>
               <el-checkbox :label="translate('formAccessCalendar.tuesday')" :value="2"/>
@@ -243,10 +241,11 @@
           />
         </el-form-item>
       </el-form>
+      </div>
 
       <!-- Save/Cancel buttons for form -->
-      <div v-if="showAssignmentForm">
-        <el-button type="primary" @click="validateAndSave">{{ translate('common.confirm') }}</el-button>
+      <div v-if="showAssignmentForm" class="aside-actions">
+      <el-button type="primary" @click="validateAndSave">{{ translate('common.confirm') }}</el-button>
         <el-button @click="handleCancel">{{ translate('common.cancel') }}</el-button>
       </div>
 
@@ -592,7 +591,6 @@ export default {
         dateClick: this.handleDateClick,
         eventClick: this.handleEventClick,
         selectable: true,
-        height: '87vh',
         eventDrop: this.handleEventDrop,
         eventResize: this.handleEventResize,
         events: [],
@@ -602,6 +600,7 @@ export default {
         locales: allLocales,
         locale: this.getCalendarLocale(),
         editable: false,
+        height: '95vh',
       },
       teamsOptions: [],
       // Dummy data, will fetch data from backend when ready
@@ -986,7 +985,14 @@ export default {
       };
     },
     mapDaysOfWeek(dayNumbers) {
-      const dayMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayMap = [translate('formAccessCalendar.sunday'),
+        translate('formAccessCalendar.monday'),
+        translate('formAccessCalendar.tuesday'),
+        translate('formAccessCalendar.wednesday'),
+        translate('formAccessCalendar.thursday'),
+        translate('formAccessCalendar.friday'),
+        translate('formAccessCalendar.saturday')
+      ];
       return dayNumbers.map(num => dayMap[num]).join(', ');
     },
     formatDate(date, format = 'yyyy-MM-dd') {
@@ -1264,11 +1270,29 @@ export default {
 </script>
 
 <style>
+.root-container {
+  height: 95vh;
+  display: flex;
+}
 
-.selected-event {
-  background-color: #bce8f1 !important;
-  border-color: #bce8f1 !important;
-  text-color: black;
+.middle-panel {
+  height: 95vh;
+}
+
+.middle-panel-header {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 15px;
+}
+
+.middle-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.middle-header-right {
+  display: flex;
+  align-items: center;
 }
 
 .aside-panel-left {
@@ -1277,16 +1301,44 @@ export default {
   padding: 10px;                   /* internal spacing */
   background-color: #fff;          /* optional: clean background */
   width: 200px;
-  max-height: 96vh;
+  margin-right: 20px;
 }
 
 .aside-panel-right {
   border: 1px solid #dcdfe6;       /* light gray border */
   border-radius: 12px;             /* rounded corners */
   padding: 10px;                   /* internal spacing */
-  background-color: #fff;          /* optional: clean background */
+  background-color: #fff;
+  margin-left: 20px; /* optional: clean background */
   width: 350px;
-  max-height: 96vh;
+
+  /* NEW additions for layout behavior */
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.aside-right-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.aside-form-scroll {
+  border-top: 1px solid #eee;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.aside-actions {
+  border-top: 1px solid #eee;
+  text-align: center;
+}
+
+.selected-event {
+  background-color: #bce8f1 !important;
+  border-color: #bce8f1 !important;
+  text-color: black;
 }
 
 .clickable-table .el-table__body td {
