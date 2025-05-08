@@ -49,3 +49,18 @@ export const getAllCalendarAssignments = () => {
 export const getCalendarAssignmentById = (id) => {
     return api.get(`${BASE_URL}/${id}`);
 };
+
+/**
+ * Retrieve form tree filtered by team ID and date.
+ * @param {number} teamId - The ID of the team.
+ * @param {string} dateTimeISO - ISO 8601 formatted OffsetDateTime string.
+ * @returns {Promise} API response with the filtered form tree.
+ */
+export const getFormTreeByTeamAndDate = (teamId, dateTimeISO) => {
+    return api.get(`${BASE_URL}/form-tree`, {
+        params: {
+            teamId,
+            date: dateTimeISO,
+        },
+    });
+};
