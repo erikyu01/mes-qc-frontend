@@ -421,6 +421,23 @@ export default {
         day: 'Day',
         list: 'List',
         tutorialContent: 'Note: Form assignments set in this calendar will override the default form access configured in team management for the specified time periods.',
+        messages:{
+            editConfirmation: 'Are you sure you want to edit this assignment?',
+            deleteConfirmation: 'Are you sure you want to delete this assignment?',
+            confirmConfirmation: 'Are you sure you want to save?',
+            cancelConfirmation: 'Are you sure you want to cancel?',
+            successfulCreate: 'Assignment created successfully',
+            successfulUpdate: 'Assignment updated successfully',
+            successfulDelete: 'Assignment deleted successfully',
+        },
+        validation:{
+            missingName: 'Please enter name for the assignment',
+            missingTeam: 'Please select a team',
+            missingDate: 'Please select a date',
+            missingForm: 'Please select at least one form',
+            missingDaysOfWeek: 'Please select at least one day to repeat on',
+            missingRequiredField: 'Please fill required fields before proceeding again',
+        }
     },
     orderManagement: {
         Id: 'ID',

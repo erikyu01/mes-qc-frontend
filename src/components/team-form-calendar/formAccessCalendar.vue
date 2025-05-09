@@ -447,15 +447,6 @@ export default {
     searchQuery() {
       this.searchOnVisibleTeamEvents();
     },
-    calendarLocale(newLocale) {
-      if (newLocale.toLowerCase() === 'en-us') {
-        console.log('switched to en locale')
-        this.calendarApi.setOption('locale', 'en');
-      } else {
-        console.log('switched to zh locale')
-        this.calendarApi.setOption('locale', 'zh');
-      }
-    }
   },
   computed: {
     QuestionFilled() {
@@ -501,14 +492,13 @@ export default {
   data(){
     const user = this.$store.getters.getUser;
     return {
-      calendarLocale: getCurrentLanguage(),
       user,
       userId: user.id,
       userRoleId: user.role?.id ?? 0,
       isManager: user.role?.id === 1 || user.role?.id === 4,
       // TODO: delete after testing
       showTestView: false,
-      // currently not in use, seems to be very distracting
+      // Not in used as the effect is distracting
       isLoadingCalendar: false,
       searchQuery: '',
       tourEnabled: false,
@@ -539,13 +529,13 @@ export default {
         endTime: null,
       },
       formRules: {
-        title: [{ required: true, message: 'Please enter a name', trigger: 'blur' }],
-        'extendedProps.teamId': [{ required: true, message: 'Please select a team', trigger: 'change' }],
+        title: [{ required: true, message: translate('formAccessCalendar.validation.missingName'), trigger: 'blur' }],
+        'extendedProps.teamId': [{ required: true, message: translate('formAccessCalendar.validation.missingTeam'), trigger: 'change' }],
         start: [
           {
             validator: (rule, value, callback) => {
               if (!this.isAssignmentRecurring && !value) {
-                callback(new Error('Please select a start date'));
+                callback(new Error(translate('formAccessCalendar.validation.missingDate')));
               } else {
                 callback();
               }
@@ -557,7 +547,7 @@ export default {
           {
             validator: (rule, value, callback) => {
               if (!this.isAssignmentRecurring && !value) {
-                callback(new Error('Please select an end date'));
+                callback(new Error(translate('formAccessCalendar.validation.missingDate')));
               } else {
                 callback();
               }
@@ -565,7 +555,7 @@ export default {
             trigger: 'change'
           }
         ],
-        'extendedProps.formTreeNodeIds': [{ type: 'array', required: true, message: 'Please select at least one form', trigger: 'change' }],
+        'extendedProps.formTreeNodeIds': [{ type: 'array', required: true, message: translate('formAccessCalendar.validation.missingForm'), trigger: 'change' }],
         daysOfWeek: [
           {
             validator: this.validateDaysOfWeek,
@@ -580,13 +570,6 @@ export default {
           left: 'prev,next,today',
           center: 'title',
           right: 'multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay,listWeek',
-        },
-        views: {
-          dayGridMonth: { buttonText: translate('formAccessCalendar.month') },
-          timeGridWeek: { buttonText: translate('formAccessCalendar.week') },
-          timeGridDay: { buttonText: translate('formAccessCalendar.day') },
-          listWeek: { buttonText: translate('formAccessCalendar.list') },
-          multiMonthYear: { buttonText: translate('formAccessCalendar.year') },
         },
         dateClick: this.handleDateClick,
         eventClick: this.handleEventClick,
@@ -603,7 +586,6 @@ export default {
         height: '95vh',
       },
       teamsOptions: [],
-      // Dummy data, will fetch data from backend when ready
       visibleTeams: new Set(),
       calendarAssignments: [],
       calendarEvents: [],
@@ -625,9 +607,6 @@ export default {
   },
   methods: {
     handleDateClick(arg) {
-      // TODO: temporarily use cancel to revert changes in case edit is not confirm
-      this.handleCancel();
-
       this.revertLastSelectedEvent();
 
       // Adjust selection and hides assignment detail
@@ -647,9 +626,6 @@ export default {
       this.showAssignmentForm = true;
     },
     async handleEventClick(info) {
-      // TODO: temporarily use cancel to revert changes in case edit is not confirm
-      this.handleCancel();
-
       this.revertLastSelectedEvent(info.event.id)
 
       // Highlight currently selected event
@@ -714,7 +690,13 @@ export default {
       this.showAssignmentDetail = true;
       this.showAssignmentForm = false;
     },
-    handleEditClick() {
+    async handleEditClick() {
+      await this.$confirm(translate('formAccessCalendar.messages.editConfirmation'), translate('orderManagement.messages.messageTitle'), {
+        confirmButtonText: translate('orderManagement.confirm'),
+        cancelButtonText: translate('orderManagement.cancel'),
+        type: "warning",
+      });
+
       // Set the selected event draggable/resizable
       const calendarApi = this.calendarApi;
       const event = calendarApi.getEventById(this.selectedEvent.id);
@@ -739,6 +721,12 @@ export default {
       this.showAssignmentForm = true;
     },
     async handleSubmitClick() {
+      await this.$confirm(translate('formAccessCalendar.messages.confirmConfirmation'), translate('orderManagement.messages.messageTitle'), {
+        confirmButtonText: translate('orderManagement.confirm'),
+        cancelButtonText: translate('orderManagement.cancel'),
+        type: "warning",
+      });
+
       // Destruct assignment form data
       const {
         id,
@@ -783,8 +771,12 @@ export default {
           ? await updateCalendarAssignment(id, {...eventPayload, updated_by: this.userId })
           : await createCalendarAssignment({ ...eventPayload, created_by: this.userId });
 
-      if (response.data.status === 200) {
-        this.$message.success("Assignment " + (this.isEditing ? "updated" : "created"));
+      if (response.data.status === '200') {
+        if (this.isEditing) {
+          this.$message.success(translate('formAccessCalendar.messages.successfulUpdate'));
+        } else {
+          this.$message.success(translate('formAccessCalendar.messages.successfulCreate'));
+        }
       }
 
       // Update event in the calendar
@@ -834,6 +826,12 @@ export default {
       this.resetAssignmentFormWithEmptyData();
     },
     async handleDeleteAssignment() {
+      await this.$confirm(translate('formAccessCalendar.messages.deleteConfirmation'), translate('orderManagement.messages.messageTitle'), {
+        confirmButtonText: translate('orderManagement.confirm'),
+        cancelButtonText: translate('orderManagement.cancel'),
+        type: "warning",
+      });
+
       const eventId = this.selectedEvent?.id;
 
       if (!eventId) return;
@@ -844,7 +842,7 @@ export default {
         const calendarApi = this.calendarApi;
         const event = calendarApi.getEventById(this.selectedEvent.id);
         event?.remove();
-        this.$message.success("Assignment deleted");
+        this.$message.success(translate('formAccessCalendar.messages.successfulDelete'));
       }
 
       // Hide detail window
@@ -852,7 +850,13 @@ export default {
       this.selectedEvent = null;
       this.lastSelectedEventId = null;
     },
-    handleCancel() {
+    async handleCancel() {
+      await this.$confirm(translate('formAccessCalendar.messages.cancelConfirmation'), translate('orderManagement.messages.messageTitle'), {
+        confirmButtonText: translate('orderManagement.confirm'),
+        cancelButtonText: translate('orderManagement.cancel'),
+        type: "warning",
+      });
+
       // Reset changes on event edited
       if (this.assignmentForm.id) {
         const calendarApi = this.calendarApi;
@@ -914,7 +918,6 @@ export default {
     },
     handleRefresh(){
       this.fetchAllCalendarAssignment();
-      this.calendarApi.render();
     },
     translate,
     subTabTitle() {
@@ -943,10 +946,9 @@ export default {
     },
     getCalendarLocale(){
       const lang = getCurrentLanguage();
-      console.log('getCalendarLocale call: current language is:', lang);
 
-      // FullCalendar expects 'en' and 'zh-cn'
-      if (lang.toLowerCase() === 'zh-cn') return 'zh-cn';
+      // FullCalendar expects 'en' and 'zh'
+      if (lang.toLowerCase() === 'zh-cn') return 'zh';
       return 'en'; // default fallback
     },
     validateAndSave(){
@@ -954,13 +956,13 @@ export default {
         if (valid) {
           this.handleSubmitClick();
         } else {
-          this.$message.error('Please fill required fields before proceeding again.');
+          this.$message.error(translate('formAccessCalendar.validation.missingRequiredField'));
         }
       })
     },
     validateDaysOfWeek(rule, value, callback) {
       if (this.isAssignmentRecurring && (!value || value.length === 0)) {
-        callback(new Error('Please select at least one day'));
+        callback(new Error(translate('formAccessCalendar.validation.missingDaysOfWeek')));
       } else {
         callback();
       }
@@ -1192,28 +1194,6 @@ export default {
       return new Date(date.getTime() + ms);
     },
     revertLastSelectedEvent(currentEventId = null) {
-      // if (!this.lastSelectedEventId) return;
-      //
-      // // Avoid reverting the current event (used in eventClick)
-      // if (currentEventId && this.lastSelectedEventId === currentEventId) return;
-      //
-      // const calendarApi = this.calendarApi;
-      // const lastEvent = calendarApi.getEventById(this.lastSelectedEventId);
-      // if (!lastEvent) return;
-      //
-      // const teamId = lastEvent.extendedProps?.teamId;
-      // const color = this.getColorByTeamId(teamId);
-      //
-      // lastEvent.setProp('backgroundColor', color);
-      // lastEvent.setProp('borderColor', color);
-      // lastEvent.setProp('startEditable', false);
-      // lastEvent.setProp('durationEditable', false);
-      //
-      // // Only reset if this is not called during an event click on the same event
-      // if (!currentEventId) {
-      //   this.lastSelectedEventId = null;
-      // }
-
       if (!this.lastSelectedEventId) return;
 
       // Avoid reverting if re-clicking the same event
@@ -1258,18 +1238,27 @@ export default {
           .map(team => team.id);
     },
     async handleFormNodeClicked(formTemplateId) {
-      console.log('handling on node click');
       await openFormPreviewWindow(formTemplateId, this)
     },
+    updateCalendarLocale() {
+      const locale = localStorage.getItem('app-language')?.toLowerCase();
+      if (this.calendarApi) {
+        this.calendarApi.setOption('locale', locale === 'zh-cn' ? 'zh-cn' : 'en');
+      }
+    }
   },
   mounted() {
     this.loadCalender();
-    this.loadFormNodes()
-  }
+    this.loadFormNodes();
+    document.addEventListener('language-changed', this.updateCalendarLocale);
+  },
+  beforeUnmount() {
+    document.removeEventListener('language-changed', this.updateCalendarLocale);
+  },
 }
 </script>
 
-<style>
+<style scoped>
 .root-container {
   height: 95vh;
   display: flex;

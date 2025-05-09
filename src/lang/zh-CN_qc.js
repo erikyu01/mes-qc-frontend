@@ -421,6 +421,23 @@ export default {
         day: '日',
         list: '單周列表',
         tutorialContent: '注意： 在此日历中设置的表单访问权限将覆盖班組管理中配置的默认表单关联，适用于指定的时间段。',
+        messages:{
+            editConfirmation: '确定要编辑此排程吗?',
+            deleteConfirmation: '确定要删除此排程吗?',
+            confirmConfirmation: '确定要保存吗?',
+            cancelConfirmation: '确定要取消吗？',
+            successfulCreate: '排程新增成功',
+            successfulUpdate: '排程编辑成功',
+            successfulDelete: '排程删除成功',
+        },
+        validation:{
+            missingName: '请输入排程名称',
+            missingTeam: '请选择班组',
+            missingDate: '请选择日期',
+            missingForm: '请至少选择一个表单',
+            missingDaysOfWeek: '请至少选择一个重复日',
+            missingRequiredField: '请填写所有必填字段后再继续操作',
+        }
     },
     orderManagement: {
         Id: '号码',
