@@ -64,16 +64,16 @@
               <!--              </el-button>-->
               <!--            </el-tooltip>-->
 
-              <!-- Tooltip Icon -->
-              <el-tooltip :content="translate('formAccessCalendar.tutorialContent')" placement="top">
-                <el-icon
-                    size="45"
-                    :color="'#b3b3b3'"
-                    style="background-color: #FFFFFF; margin-right:5px; "
-                >
-                  <QuestionFilled />
-                </el-icon>
-              </el-tooltip>
+              <!-- Tooltip Icon, not in used for now -->
+<!--              <el-tooltip :content="translate('formAccessCalendar.tutorialContent')" placement="top">-->
+<!--                <el-icon-->
+<!--                    size="45"-->
+<!--                    :color="'#b3b3b3'"-->
+<!--                    style="background-color: #FFFFFF; margin-right:5px; "-->
+<!--                >-->
+<!--                  <QuestionFilled />-->
+<!--                </el-icon>-->
+<!--              </el-tooltip>-->
 
               <!-- Refresh Button -->
               <el-tooltip :content="translate('formAccessCalendar.refreshDescription')" placement="top">
