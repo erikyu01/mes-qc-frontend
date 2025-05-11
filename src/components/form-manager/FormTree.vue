@@ -163,7 +163,9 @@ const toggleEditMode = () => {
 const fetchFormTreeData = async () => {
   try {
     const response = props.accessByTeam !== undefined
-        ? await fetchFormAccessByTeam(props.accessByTeam)
+        ? await getFormTreeByTeam(props.accessByTeam)
+        // Disabled forms fetch from calendar assignment for now
+        // ? await fetchFormAccessByTeam(props.accessByTeam)
         : await fetchFormNodes();
 
     data.value = props.accessByTeam !== undefined
