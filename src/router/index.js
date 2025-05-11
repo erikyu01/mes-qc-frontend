@@ -21,7 +21,7 @@ import TestSubjectManagement from "@/views/TestSubjectManagement.vue";
 import TeamManagement from "@/views/TeamManagement.vue";
 import PendingTasks from "@/views/TaskCenter/PendingTasks.vue";
 import ShiftManagement from "@/views/shiftManagement.vue";
-import FormAccessCalendar from "@/components/team-form-calendar/formAccessCalendar.vue";
+import FormAccessCalendarV2 from "@/components/team-form-calendar/formAccessCalendarV2.vue";
 
 const routes = [
     {
@@ -66,7 +66,7 @@ const routes = [
     {
         path: '/form-access-calendar',
         name: 'FormAccessCalendar',
-        component: FormAccessCalendar,
+        component: FormAccessCalendarV2,
     },
     {
         path: '/task-assignment',
