@@ -319,8 +319,8 @@ import { PieChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import VChart from "vue-echarts";
 import {ArrowDownBold, ArrowUpBold, QuestionFilled, Search, Setting} from "@element-plus/icons-vue";
-import { getAllAlarmRiskLevels } from '@/mockServices/definitions/alarmRiskLevelDefinitionService';
-import { getAllAlarmStatuses } from '@/mockServices/definitions/alarmStatusDefinitionService';
+// import { getAllAlarmRiskLevels } from '@/mockServices/definitions/alarmRiskLevelDefinitionService';
+// import { getAllAlarmStatuses } from '@/mockServices/definitions/alarmStatusDefinitionService';
 // import { getAllAlerts } from '@/mockServices/alert/alertService';
 import {deleteAlertRecord, getPaginatedAlertRecords, updateAlertRecord} from "@/services/alarmRecordService";
 import {convertToUtcRange, formatDate} from "@/utils/task-center/dateFormatUtils"; // 替换 alert mock 调用
