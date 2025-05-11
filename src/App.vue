@@ -90,7 +90,7 @@ export default {
 
 .content {
   flex: 1;            /* Allow the content to take the remaining width */
-  padding: 20px;
+  padding: 10px 20px;
   overflow-y: auto;   /* Default scrolling behavior */
 }
 

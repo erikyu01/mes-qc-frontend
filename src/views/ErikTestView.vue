@@ -1,60 +1,99 @@
 <template>
-  <div>
-    <SIdentify :identifyCode="identifyCode" >
-    </SIdentify>
-  </div>
-  <div>
-    <SIdentify :identifyCode="identifyCode" />
-    <button @click="refreshIdentifyCode">刷新</button>
-    <input v-model="userInput" type="text" placeholder="输入验证码" />
-    <button @click="submitCode">提交</button>
-    <p>{{ message }}</p>
+  <div class="chat-container">
+    <div class="chat-window">
+      <div v-for="(msg, index) in chatHistory" :key="index" :class="['chat-bubble', msg.role]">
+        <span>{{ msg.content }}</span>
+      </div>
+    </div>
+    <div class="chat-input">
+      <el-input
+          v-model="question"
+          placeholder="Ask about QC products..."
+          @keyup.enter="ask"
+          clearable
+      />
+      <el-button type="primary" @click="ask">Send</el-button>
+    </div>
   </div>
 </template>
 
 <script>
-  import SIdentify from "@/components/user/SIdentify";
+import axios from 'axios'
 
-  export default {
-    name: "IdentifyPage",
-    components: { SIdentify },
-    data(){
-      return {
-        identifyCode: "", //密码登录图形验证码
-        identifyCodes: "1234567890abcdefghizklmnopqrstuvwxyz", //生成图形验证码的依据
-        userInput: "", // For storing the user's input
-        message: "",   // For displaying success or error messages
-      }
-    },
-    methods:{
-      // 刷新验证码
-      refreshIdentifyCode() {
-        this.identifyCode = "";
-        this.makeIdentifyCode(4);
-      },
-      // 生成4位数的随机验证码
-      makeIdentifyCode(l) {
-        for (let i = 0; i < l; i++) {
-          this.identifyCode +=
-              this.identifyCodes[this.randomNum(0, this.identifyCodes.length)];
-        }
-      },
-      submitCode() {
-        if (this.userInput === this.identifyCode) {
-          this.message = "验证成功！"; // Success message
-        } else {
-          this.message = "验证码错误！"; // Error message
-        }
-      },
-      // 生成单个验证码
-      randomNum(min, max) {
-        return Math.floor(Math.random() * (max - min) + min);
-      },
-    },
-    mounted() {
-      // 初始化验证码
-      this.identifyCode = "";
-      this.makeIdentifyCode(4);
-    },
+export default {
+  data() {
+    return {
+      question: '',
+      chatHistory: []
+    }
+  },
+  methods: {
+    async ask() {
+      if (!this.question.trim()) return
+      this.chatHistory.push({role: 'user', content: this.question})
+      const res = await axios.post('http://localhost:5000/chat', {question: this.question})
+      this.chatHistory.push({role: 'bot', content: res.data.reply})
+      this.question = ''
+      this.$nextTick(() => {
+        const el = this.$el.querySelector('.chat-window')
+        el.scrollTop = el.scrollHeight
+      })
+    }
   }
+}
 </script>
+
+<style scoped>
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 80vh;
+  max-width: 600px;
+  margin: 0 auto;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f9f9f9;
+}
+
+.chat-window {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background: #ffffff;
+}
+
+.chat-bubble {
+  max-width: 80%;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.chat-bubble.user {
+  background-color: #d1e9ff;
+  align-self: flex-end;
+  margin-left: auto;
+  text-align: right;
+}
+
+.chat-bubble.bot {
+  background-color: #f1f1f1;
+  align-self: flex-start;
+  margin-right: auto;
+}
+
+.chat-input {
+  display: flex;
+  padding: 12px;
+  border-top: 1px solid #ddd;
+  background: #fff;
+}
+
+.chat-input .el-input {
+  flex: 1;
+  margin-right: 8px;
+}
+</style>

@@ -14,3 +14,18 @@ export function formatDate(dateString) {
 
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
+
+/**
+ * Converts a date range array [start, end] from local time to UTC ISO strings.
+ * @param {[Date, Date]} dateRangeArray - Array with two Date objects.
+ * @returns {string} - A string like "2025-12-01T00:00:00.000Z,2025-12-31T23:59:59.999Z"
+ */
+export function convertToUtcRange(dateRangeArray) {
+    if (!Array.isArray(dateRangeArray) || dateRangeArray.length !== 2) return '';
+
+    const [start, end] = dateRangeArray;
+    const startUtc = new Date(start).toISOString(); // Convert local to UTC
+    const endUtc = new Date(end).toISOString();     // Convert local to UTC
+    return `${startUtc},${endUtc}`;
+}
+

@@ -37,7 +37,7 @@
                 <Folder v-if="data.nodeType === 'folder'" />
                 <Document v-else />
               </el-icon>
-              <el-text style="max-width: 150px;" truncated>
+              <el-text style="max-width: 220px;" truncated>
                 {{ data.label }}
               </el-text>
             </div>

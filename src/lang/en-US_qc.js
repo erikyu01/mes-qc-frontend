@@ -191,6 +191,7 @@ export default {
         historyTasks: "History Tasks",
         overdueTasks: "Overdue Tasks",
         taskCalendar: "Task Calendar",
+        alarmRecords: "Alarm Records",
         formDataSummary: "Form Data Summary",
         logout: "Logout",
         userRole: "User Role",
@@ -690,6 +691,8 @@ export default {
         generatePdf: "Generate PDF",
         viewRecords: "View QC Records",
         recordTable: {
+            groupUncategorized: "QC General Fields",
+            groupBasicInfo: "QC Basic Info",
             groupSystemInfo: "System Submission Info",
             submitter: "Submitter",
             submittedAt: "Submission Time",

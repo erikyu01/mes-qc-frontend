@@ -192,6 +192,7 @@ export default {
         overdueTasks: "逾期任务",
         taskCalendar: "任务日历",
         formDataSummary: '质检汇总',
+        alarmRecords: '告警记录',
         logout: "登出",
         userRole: "用户角色",
         username: "用户名",
@@ -689,6 +690,8 @@ export default {
         generatePdf: "生成 PDF",
         viewRecords: "查看质检记录",
         recordTable: {
+            groupUncategorized: "质检通用信息",
+            groupBasicInfo: "质检基础信息",
             groupSystemInfo: "系统提交信息",
             submitter: "提交人",
             submittedAt: "提交时间",
@@ -708,7 +711,7 @@ export default {
         },
         detailDialog: {
             titleSuffix: "提交记录",
-            uncategorized: "未分类",
+            uncategorized: "uncategorized",
             submitter: "提交人",
             submittedAt: "提交时间",
             signatureTitle: "质检人签名：",

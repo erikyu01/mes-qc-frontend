@@ -22,6 +22,8 @@ import TeamManagement from "@/views/TeamManagement.vue";
 import PendingTasks from "@/views/TaskCenter/PendingTasks.vue";
 import ShiftManagement from "@/views/shiftManagement.vue";
 import FormAccessCalendarV2 from "@/components/team-form-calendar/formAccessCalendarV2.vue";
+import AlarmRecords from "@/views/AlarmRecords.vue";
+
 
 const routes = [
     {
@@ -116,8 +118,8 @@ const routes = [
         component: TaskCenterDashboard
     },
     {
-        path: '/erik-test',
-        name: 'ErikTest',
+        path: '/erik-test-view',
+        name: 'ErikTestView',
         component: ErikTestView
     },
     {
@@ -146,6 +148,12 @@ const routes = [
         name: 'TestSubjectManagement',
         component: TestSubjectManagement,
     },
+    {
+        path: '/alarm-records',
+        name: 'AlarmRecords',
+        component: AlarmRecords,
+    },
+
 ];
 
 const router = createRouter({

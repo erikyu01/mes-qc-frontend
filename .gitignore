@@ -10,3 +10,4 @@ dist-ssr
 /package-lock.json
 /lib/vuedraggable/dist_bak/
 .env.test
+/src/mockServices

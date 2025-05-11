@@ -432,10 +432,10 @@ export default {
           if (typeof value === "object" && value !== null && !Array.isArray(value)) {
             grouped[key] = value; // 如果是对象，归类到单独分区
           } else {
-            if (!grouped["未分类"]) {
-              grouped["未分类"] = {};
+            if (!grouped["uncategorized"]) {
+              grouped["uncategorized"] = {};
             }
-            grouped["未分类"][key] = value;
+            grouped["uncategorized"][key] = value;
           }
         });
 

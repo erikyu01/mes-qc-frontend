@@ -91,6 +91,10 @@
                 <el-icon><Document /></el-icon>
                 <span>{{ translate('navigationMenu.formDataSummary') }}</span>
               </el-menu-item>
+              <el-menu-item index="/alarm-records">
+                <el-icon><WarningFilled /></el-icon>
+                <span>{{ translate('navigationMenu.alarmRecords') }}</span>
+              </el-menu-item>
             </el-sub-menu>
           </template>
 
@@ -252,7 +256,7 @@ import {
   DataAnalysis,
   Collection,
   SwitchButton,
-  Calendar, Warning, Location, TakeawayBox, DArrowLeft, DArrowRight
+  Calendar, Warning, Location, TakeawayBox, DArrowLeft, DArrowRight, WarningFilled
 } from '@element-plus/icons-vue';
 import { mapGetters, mapActions } from 'vuex';
 import { translate } from "@/utils/i18n";
@@ -260,6 +264,7 @@ import { getUserById, updateUser } from '@/services/userService.js';
 
 export default {
   components: {
+    WarningFilled,
     DArrowRight,
     DArrowLeft,
     TakeawayBox,

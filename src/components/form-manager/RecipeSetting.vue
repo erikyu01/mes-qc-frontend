@@ -17,27 +17,6 @@
         <div class="key-name">{{ item.label }}</div>
 
         <div class="input-group">
-          <div class="input-label">上限</div>
-          <el-input-number
-              v-model="item.upper_control_limit"
-              :min="item.lower_control_limit"
-              :step="0.1"
-              controls-position="right"
-              class="input"
-              :precision="2"
-              placeholder="上限"
-          />
-          <div style="width: 100%; text-align: center;">
-            <span
-                v-if="item.upper_control_limit !== originalControlLimits[key]?.upper_control_limit"
-                class="original-value"
-            >
-              原始值：{{ originalControlLimits[key]?.upper_control_limit }}
-            </span>
-          </div>
-        </div>
-
-        <div class="input-group">
           <div class="input-label">下限</div>
           <el-input-number
               v-model="item.lower_control_limit"
@@ -54,6 +33,27 @@
                 class="original-value"
             >
               原始值：{{ originalControlLimits[key]?.lower_control_limit }}
+            </span>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">上限</div>
+          <el-input-number
+              v-model="item.upper_control_limit"
+              :min="item.lower_control_limit"
+              :step="0.1"
+              controls-position="right"
+              class="input"
+              :precision="2"
+              placeholder="上限"
+          />
+          <div style="width: 100%; text-align: center;">
+            <span
+                v-if="item.upper_control_limit !== originalControlLimits[key]?.upper_control_limit"
+                class="original-value"
+            >
+              原始值：{{ originalControlLimits[key]?.upper_control_limit }}
             </span>
           </div>
         </div>
