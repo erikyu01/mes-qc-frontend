@@ -275,16 +275,7 @@
             </el-select>
           </el-form-item>
 
-          <el-form-item prop="selectedForms">
-            <template #label>
-              {{ translate('teamManagement.addDialog.forms') }}
-              <el-tooltip :content="translate('teamManagement.messages.defaultFormTooltip')" placement="top">
-                <el-icon>
-                  <question-filled />
-                </el-icon>
-              </el-tooltip>
-            </template>
-
+          <el-form-item :label="translate('teamManagement.addDialog.forms')" prop="selectedForms">
             <team-form-tree
                 :showOnlySelectedNode="false"
                 :expand-all-nodes="false"
@@ -369,16 +360,7 @@
             </el-select>
           </el-form-item>
 
-          <el-form-item>
-            <template #label>
-              {{ translate('teamManagement.editDialog.forms') }}
-              <el-tooltip :content="translate('teamManagement.messages.defaultFormTooltip')" placement="top">
-                <el-icon style="vertical-align: middle;">
-                  <question-filled />
-                </el-icon>
-              </el-tooltip>
-            </template>
-
+          <el-form-item :label="translate('teamManagement.editDialog.forms')">
             <team-form-tree
                 :selectedFormIds="editForm.assignedForms"
                 :showOnlySelectedNode="false"

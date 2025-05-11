@@ -10,18 +10,16 @@
         <el-icon><Search /></el-icon>
       </template>
     </el-input>
-    <el-tooltip
-        :content="translate('orderManagement.orderFormDialog.uncheckAll')"
-        placement="top"
+
+    <el-button
+        v-if="showOnlySelectedNode === false"
+        type="warning"
+        @click="clearFormSelection"
+        style="height: 32px; width: 80px; line-height: normal; margin: 0; padding: 5px;"
     >
-      <el-button
-          v-if="showOnlySelectedNode === false"
-          type="warning"
-          @click="clearFormSelection"
-          :icon="DocumentRemove"
-          style="height: 32px; width: 50px; line-height: normal; margin: 0; padding: 5px;"
-      />
-    </el-tooltip>
+      {{ translate('orderManagement.orderFormDialog.uncheckAll') }}
+    </el-button>
+
   </div>
   <div class="form-container">
       <el-tree
