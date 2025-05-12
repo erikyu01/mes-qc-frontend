@@ -255,7 +255,7 @@ export default {
             startTime: '开始时间',
             endTime: '结束时间',
             members: '成员',
-            forms: '默认关联表单',
+            forms: '关联表单',
             description: '描述',
             status: '状态',
             cancelButton: '取消',
