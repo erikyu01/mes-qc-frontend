@@ -104,6 +104,7 @@ import {
 import { ElMessageBox } from "element-plus";
 import { defineProps } from 'vue';
 import { getFormTreeByTeam } from '@/services/teamFormService';
+import { getFormTreeByTeamAndDate } from '@/services/calendarAssignmentService';
 
 interface Tree {
   _id: string
@@ -163,6 +164,8 @@ const fetchFormTreeData = async () => {
   try {
     const response = props.accessByTeam !== undefined
         ? await getFormTreeByTeam(props.accessByTeam)
+        // Disabled forms fetch from calendar assignment for now
+        // ? await fetchFormAccessByTeam(props.accessByTeam)
         : await fetchFormNodes();
 
     data.value = props.accessByTeam !== undefined
@@ -174,7 +177,28 @@ const fetchFormTreeData = async () => {
   }
 };
 
+const fetchFormAccessByTeam = async (teamId) => {
+  // Grab team specific forms from calendar for today
+  let response = await getFormTreeByTeamAndDate(teamId, new Date().toISOString());
 
+  if (response.data.status === '200' && response.data.data.length > 0) {
+    return response;
+  }
+
+  // Grab default forms setup in team management if no form is present
+  response = await getFormTreeByTeam(teamId);
+
+  if (response.data.status === '200' && response.data.data.length > 0) {
+    return response;
+  }
+
+  // Return a consistent empty structure if no data found
+  return {
+    data: {
+      data: []
+    }
+  };
+}
 
 onMounted(fetchFormTreeData)
 
