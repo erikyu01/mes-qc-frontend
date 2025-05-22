@@ -108,6 +108,10 @@
               <el-icon><DataAnalysis /></el-icon>
               <span>{{ translate('navigationMenu.taskDashboard') }}</span>
             </el-menu-item>
+            <el-menu-item index="/form-access-calendar" v-if="[2, 3].includes(user.role.id)">
+              <el-icon><Calendar /></el-icon>
+              <span>{{ translate('navigationMenu.formAccessCalendar') }}</span>
+            </el-menu-item>
             <el-menu-item index="/pending-tasks">
               <el-icon><Document /></el-icon>
               <span>{{ translate('navigationMenu.pendingTasks') }}</span>
